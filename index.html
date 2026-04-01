@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>顧客マップ</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+      background: #f0f2f5;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #1a73e8;
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 18px; font-weight: 600; }
+    .badge {
+      background: rgba(255,255,255,0.25);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 13px;
+    }
+
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* ---- サイドパネル ---- */
+    .sidebar {
+      width: 320px;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #ddd;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    /* タブ */
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #e0e0e0;
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px 8px;
+      border: none;
+      background: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s;
+    }
+    .tab-btn.active { color: #1a73e8; border-bottom-color: #1a73e8; }
+    .tab-btn:hover:not(.active) { color: #444; background: #f5f5f5; }
+
+    /* タブパネル */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .sidebar-inner {
+      overflow-y: auto;
+      flex: 1;
+      padding: 16px;
+    }
+
+    /* ---- 手動入力フォーム ---- */
+    .form-group { margin-bottom: 12px; }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #555;
+      margin-bottom: 4px;
+    }
+    .form-group input, .form-group textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      transition: border-color 0.15s;
+      background: white;
+    }
+    .form-group input:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+    }
+    .form-group textarea { resize: vertical; min-height: 60px; }
+    .required-mark { color: #d93025; margin-left: 2px; }
+
+    /* ---- Excel アップロード ---- */
+    .drop-zone {
+      border: 2px dashed #aaa;
+      border-radius: 10px;
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: #fafafa;
+      margin-bottom: 16px;
+    }
+    .drop-zone.dragover { border-color: #1a73e8; background: #e8f0fe; }
+    .drop-zone .icon { font-size: 32px; margin-bottom: 8px; }
+    .drop-zone p { color: #555; font-size: 13px; line-height: 1.6; }
+    .drop-zone input { display: none; }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      margin-top: 4px;
+    }
+    .column-config { margin-bottom: 16px; }
+    .col-row { display: flex; align-items: center; margin-bottom: 8px; gap: 8px; }
+    .col-row label { font-size: 13px; width: 80px; flex-shrink: 0; color: #333; }
+    .col-row select {
+      flex: 1;
+      padding: 6px 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 13px;
+      background: white;
+    }
+
+    /* ボタン */
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, background 0.2s;
+      margin-bottom: 8px;
+    }
+    .btn:last-child { margin-bottom: 0; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: #1a73e8; color: white; }
+    .btn-primary:hover:not(:disabled) { background: #1558b0; }
+    .btn-success { background: #1e8e3e; color: white; }
+    .btn-success:hover:not(:disabled) { background: #157234; }
+    .btn-clear { background: #f1f3f4; color: #444; }
+    .btn-clear:hover:not(:disabled) { background: #e0e0e0; }
+
+    /* 進捗バー */
+    .progress-wrap { margin: 12px 0; display: none; }
+    .progress-label { font-size: 12px; color: #555; margin-bottom: 4px; }
+    .progress-bar-bg { background: #e0e0e0; border-radius: 6px; height: 8px; overflow: hidden; }
+    .progress-bar { height: 100%; background: #1a73e8; border-radius: 6px; transition: width 0.2s; width: 0%; }
+
+    /* 右パネル */
+    .right-panel {
+      width: 260px;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid #ddd;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .right-panel-header {
+      padding: 10px 14px 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .customer-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: 0 8px 8px;
+    }
+    .customer-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.15s;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .customer-item:hover { background: #f0f4ff; border-color: #c5d8ff; }
+    .customer-item.active { background: #e8f0fe; border-color: #1a73e8; }
+    .ci-body { flex: 1; min-width: 0; }
+    .ci-name { font-size: 13px; font-weight: 600; color: #222; }
+    .ci-addr { font-size: 11px; color: #777; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ci-status { font-size: 11px; margin-top: 2px; }
+    .ci-ok { color: #1e8e3e; }
+    .ci-err { color: #d93025; }
+    .ci-pending { color: #f9ab00; }
+
+    /* 営業ステータスバッジ */
+    .sales-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 1px 7px;
+      border-radius: 10px;
+      margin-top: 3px;
+      color: white;
+    }
+
+    /* フィルターバー */
+    .filter-bar {
+      padding: 6px 8px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-shrink: 0;
+      border-bottom: 1px solid #eee;
+    }
+    .filter-bar select {
+      flex: 1;
+      padding: 4px 6px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 12px;
+      background: white;
+    }
+
+    /* ポップアップ内ステータス選択 */
+    .popup-status-select {
+      width: 100%;
+      margin-top: 8px;
+      padding: 5px 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    /* 削除ボタン */
+    .ci-del {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0 2px;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: color 0.15s;
+    }
+    .ci-del:hover { color: #d93025; }
+
+    /* マップ */
+    #map { flex: 1; }
+
+    /* ポップアップ */
+    .leaflet-popup-content { font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; min-width: 180px; }
+    .popup-name { font-size: 15px; font-weight: 700; color: #1a73e8; margin-bottom: 6px; }
+    .popup-row { font-size: 12px; color: #444; margin-bottom: 3px; display: flex; gap: 6px; }
+    .popup-row .pl { font-weight: 600; color: #888; min-width: 40px; }
+
+    /* 統計バー */
+    .stat-bar {
+      padding: 7px 16px;
+      background: #f8f9fa;
+      border-top: 1px solid #e0e0e0;
+      font-size: 12px;
+      color: #555;
+      display: flex;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .empty-hint {
+      text-align: center;
+      color: #bbb;
+      font-size: 12px;
+      padding: 16px 0;
+    }
+
+    /* トースト通知 */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #333;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      z-index: 9999;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Google Sheets */
+    .gs-box {
+      background: #f0faf4;
+      border: 1px solid #b7dfca;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .gs-icon { font-size: 28px; margin-bottom: 6px; }
+    .gs-title { font-size: 14px; font-weight: 700; color: #1e8e3e; }
+    .gs-hint { font-size: 12px; color: #555; margin-top: 3px; }
+    .gs-note {
+      background: #fffbe6;
+      border: 1px solid #f0d060;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 11px;
+      color: #7a5c00;
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+    .btn-gs { background: #1e8e3e; color: white; }
+    .btn-gs:hover:not(:disabled) { background: #157234; }
+    .btn-gs:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ピン打ちモードボタン */
+    #pinModeBtn {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      padding: 8px 18px;
+      border: 2px solid #1a73e8;
+      border-radius: 24px;
+      background: white;
+      color: #1a73e8;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transition: background 0.15s, color 0.15s;
+      font-family: inherit;
+    }
+    #pinModeBtn.active {
+      background: #1a73e8;
+      color: white;
+    }
+    #map.pin-mode { cursor: crosshair; }
+
+    /* マップ上ポップアップフォーム */
+    .map-popup-form input,
+    .map-popup-form select,
+    .map-popup-form textarea {
+      width: 100%;
+      padding: 5px 7px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 12px;
+      font-family: inherit;
+      margin-bottom: 6px;
+      box-sizing: border-box;
+    }
+    .map-popup-form textarea { resize: vertical; min-height: 48px; }
+    .map-popup-form .popup-label { font-size: 11px; font-weight: 700; color: #555; margin-bottom: 2px; display: block; }
+    .map-popup-form .popup-actions { display: flex; gap: 6px; margin-top: 4px; }
+    .map-popup-form .popup-actions button {
+      flex: 1; padding: 6px; border: none; border-radius: 6px;
+      font-size: 12px; font-weight: 700; cursor: pointer;
+    }
+    .popup-add-btn  { background: #1e8e3e; color: white; }
+    .popup-cancel-btn { background: #f1f3f4; color: #444; }
+
+    /* ヒートマップコントロール */
+    .heatmap-section {
+      border-top: 1px solid #eee;
+      padding: 8px 12px;
+      flex-shrink: 0;
+    }
+    .heatmap-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .heatmap-checks {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .heatmap-check-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .heatmap-check-row input { cursor: pointer; }
+    .heat-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <span>📍</span>
+  <h1>顧客マップ</h1>
+  <span class="badge">OpenStreetMap</span>
+</header>
+
+<div class="main">
+
+  <!-- サイドパネル -->
+  <div class="sidebar">
+
+    <!-- タブ -->
+    <div class="tabs">
+      <button class="tab-btn active" id="tbtn-manual" onclick="switchTab('manual')">✏️ 手動入力</button>
+      <button class="tab-btn" id="tbtn-excel" onclick="switchTab('excel')">📊 Excel</button>
+      <button class="tab-btn" id="tbtn-gsheet" onclick="switchTab('gsheet')">🟢 スプレッドシート</button>
+    </div>
+
+    <div class="sidebar-inner">
+
+      <!-- ===== 手動入力タブ ===== -->
+      <div class="tab-panel active" id="tab-manual">
+        <div class="form-group">
+          <label>顧客名</label>
+          <input type="text" id="fName" placeholder="例：山田太郎">
+        </div>
+        <div class="form-group">
+          <label>住所 <span class="required-mark">*</span></label>
+          <input type="text" id="fAddr" placeholder="例：東京都渋谷区渋谷1-1-1">
+        </div>
+        <div class="form-group">
+          <label>電話番号</label>
+          <input type="text" id="fTel" placeholder="例：03-1234-5678">
+        </div>
+        <div class="form-group">
+          <label>メモ</label>
+          <textarea id="fNote" placeholder="備考など..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>営業ステータス</label>
+          <select id="fStatus"></select>
+        </div>
+        <button class="btn btn-success" id="addBtn" onclick="addManual()">📍 追加してピン表示</button>
+      </div>
+
+      <!-- ===== Excelタブ ===== -->
+      <div class="tab-panel" id="tab-excel">
+        <div class="drop-zone" id="dropZone">
+          <div class="icon">📊</div>
+          <p>Excelファイルをドロップ<br>または<strong>クリックして選択</strong></p>
+          <p style="margin-top:6px;font-size:11px;color:#aaa">.xlsx / .xls 対応</p>
+          <input type="file" id="fileInput" accept=".xlsx,.xls">
+        </div>
+        <!-- シート選択 -->
+        <div id="sheetSelector" style="display:none">
+          <div class="form-group">
+            <label>シートを選択</label>
+            <select id="sheetSelect" onchange="onSheetChange()"></select>
+          </div>
+          <div id="sheetInfo" style="font-size:11px;color:#888;margin-top:-6px;margin-bottom:10px"></div>
+        </div>
+      </div>
+
+      <!-- ===== Google スプレッドシートタブ ===== -->
+      <div class="tab-panel" id="tab-gsheet">
+        <div class="gs-box">
+          <div class="gs-icon">🟢</div>
+          <p class="gs-title">Google スプレッドシート</p>
+          <p class="gs-hint">シートのURLを貼り付けてください</p>
+        </div>
+        <div class="form-group" style="margin-top:12px">
+          <label>スプレッドシートURL</label>
+          <input type="text" id="gsUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
+        </div>
+        <button class="btn btn-gs" id="gsBtn" onclick="loadGoogleSheets()">📥 読み込む</button>
+        <div class="gs-note">
+          ⚠️ 事前にシートを「<strong>リンクを知っている全員が閲覧可</strong>」に設定してください
+        </div>
+      </div>
+
+      <!-- ===== カラム設定（Excel / Google Sheets 共通） ===== -->
+      <div class="column-config" id="colConfig" style="display:none">
+        <div class="section-title">カラム設定</div>
+        <div class="col-row">
+          <label>📛 顧客名</label>
+          <select id="colName"></select>
+        </div>
+        <div class="col-row">
+          <label>📍 住所 *</label>
+          <select id="colAddr"></select>
+        </div>
+        <div class="col-row">
+          <label>📝 メモ</label>
+          <select id="colNote"></select>
+        </div>
+        <div class="col-row">
+          <label>📞 電話</label>
+          <select id="colTel"></select>
+        </div>
+        <div class="col-row">
+          <label>🏷 ステータス</label>
+          <select id="colStatus"></select>
+        </div>
+      </div>
+
+      <div id="bulkActions" style="display:none">
+        <button class="btn btn-primary" id="plotBtn">🗺 マップに表示</button>
+        <button class="btn btn-clear" id="excelClearBtn" onclick="clearAll()">🗑 全てクリア</button>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <div class="progress-label" id="progressLabel">処理中...</div>
+          <button id="cancelBtn" onclick="cancelGeocoding()" style="background:#d93025;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer">■ 中止</button>
+        </div>
+        <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+      </div>
+
+    </div><!-- /sidebar-inner -->
+
+  </div><!-- /sidebar -->
+
+  <!-- マップ -->
+  <div id="map"></div>
+
+  <!-- ピン打ちモードボタン（マップ上に浮かせる） -->
+  <button id="pinModeBtn" onclick="togglePinMode()" title="マップをクリックしてピンを打つ">
+    📍 ピン打ちモード
+  </button>
+
+  <!-- 右パネル：顧客管理 -->
+  <div class="right-panel">
+
+    <!-- ヘッダー -->
+    <div class="right-panel-header">
+      <span>顧客一覧</span>
+      <button onclick="clearAll()" style="background:#d93025;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer">🗑 全て削除</button>
+    </div>
+
+    <!-- フィルター -->
+    <div class="filter-bar">
+      <select id="filterSelect" onchange="renderCustomerList()">
+        <option value="">すべて表示</option>
+      </select>
+    </div>
+
+    <!-- ヒートマップ -->
+    <div class="heatmap-section">
+      <div class="heatmap-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>🌡 ヒートマップ</span>
+        <label style="font-size:11px;font-weight:600;color:#1a73e8;cursor:pointer;display:flex;align-items:center;gap:3px">
+          <input type="checkbox" id="heatAllCheck" onchange="toggleAllHeat(this.checked)"> すべて
+        </label>
+      </div>
+      <div class="heatmap-checks" id="heatmapChecks"></div>
+    </div>
+
+    <!-- 顧客リスト -->
+    <div class="customer-list" id="customerList">
+      <div class="empty-hint">顧客を追加するとここに一覧が表示されます</div>
+    </div>
+
+    <!-- 統計バー -->
+    <div class="stat-bar" id="statBar" style="display:none;flex-wrap:wrap;gap:6px 12px;">
+    </div>
+
+    <!-- データバー -->
+    <div style="padding:6px 10px;background:#f8f9fa;border-top:1px solid #e0e0e0;display:flex;gap:6px;flex-shrink:0">
+      <button onclick="exportData()" style="flex:1;padding:5px;border:1px solid #ccc;border-radius:6px;background:white;font-size:11px;cursor:pointer;font-weight:600">💾 エクスポート</button>
+      <label style="flex:1;padding:5px;border:1px solid #ccc;border-radius:6px;background:white;font-size:11px;cursor:pointer;font-weight:600;text-align:center">
+        📂 インポート<input type="file" accept=".json" id="importInput" style="display:none" onchange="importData(event)">
+      </label>
+    </div>
+
+  </div><!-- /right-panel -->
+
+</div>
+
+<!-- トースト -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== DB層（ここだけ差し替えればSupabase等に移行可能） ==========
+async function saveData(data) {
+  localStorage.setItem('customermap_v1', JSON.stringify(data));
+}
+async function loadData() {
+  try {
+    return JSON.parse(localStorage.getItem('customermap_v1') || '[]');
+  } catch { return []; }
+}
+
+// ========== マップ初期化 ==========
+const map = L.map('map').setView([36.2, 138.0], 5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  maxZoom: 18
+}).addTo(map);
+const markerGroup = L.layerGroup().addTo(map);
+
+// ========== 営業ステータス定義 ==========
+const SALES_STATUSES = {
+  '未アタック': { color: '#9e9e9e', icon: '⬜' },
+  'アタック中': { color: '#1a73e8', icon: '🔵' },
+  '感触あり':   { color: '#f57c00', icon: '🟠' },
+  '成約':       { color: '#1e8e3e', icon: '🟢' },
+  '見込みなし': { color: '#d93025', icon: '🔴' },
+};
+const DEFAULT_SALES_STATUS = '未アタック';
+
+// フィルター選択肢 & ヒートマップチェックボックスを初期化
+(function initControls() {
+  const sel = document.getElementById('filterSelect');
+  const fStatus = document.getElementById('fStatus');
+  const heatChecks = document.getElementById('heatmapChecks');
+  Object.entries(SALES_STATUSES).forEach(([s, def]) => {
+    // フィルター
+    const o = document.createElement('option');
+    o.value = s; o.textContent = def.icon + ' ' + s;
+    sel.appendChild(o);
+    // 手動入力フォームのステータス
+    const o2 = document.createElement('option');
+    o2.value = s; o2.textContent = def.icon + ' ' + s;
+    fStatus.appendChild(o2);
+    // ヒートマップチェックボックス
+    const label = document.createElement('label');
+    label.className = 'heatmap-check-row';
+    label.innerHTML = `
+      <input type="checkbox" id="heat-${s}" onchange="updateHeatmaps()">
+      <span class="heat-dot" style="background:${def.color}"></span>
+      <span>${s}</span>`;
+    heatChecks.appendChild(label);
+  });
+})();
+
+// ========== ヒートマップ ==========
+const heatLayers = {};
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function toggleAllHeat(checked) {
+  Object.keys(SALES_STATUSES).forEach(s => {
+    const cb = document.getElementById(`heat-${s}`);
+    if (cb) cb.checked = checked;
+  });
+  updateHeatmaps();
+}
+
+function updateHeatmaps() {
+  // 「すべて」チェックボックスの状態を同期
+  const allChecked = Object.keys(SALES_STATUSES).every(s => document.getElementById(`heat-${s}`)?.checked);
+  const allUnchecked = Object.keys(SALES_STATUSES).every(s => !document.getElementById(`heat-${s}`)?.checked);
+  const allCb = document.getElementById('heatAllCheck');
+  if (allCb) { allCb.checked = allChecked; allCb.indeterminate = !allChecked && !allUnchecked; }
+  // 既存レイヤーを削除
+  Object.values(heatLayers).forEach(l => map.removeLayer(l));
+  Object.keys(heatLayers).forEach(k => delete heatLayers[k]);
+
+  Object.entries(SALES_STATUSES).forEach(([status, def]) => {
+    const cb = document.getElementById(`heat-${status}`);
+    if (!cb?.checked) return;
+
+    const points = customers
+      .filter(c => c._salesStatus === status && c._lat && c._lng)
+      .map(c => [c._lat, c._lng, 1]);
+    if (!points.length) return;
+
+    heatLayers[status] = L.heatLayer(points, {
+      radius: 60,
+      blur: 40,
+      minOpacity: 0.5,
+      gradient: {
+        0.2: hexToRgba(def.color, 0.6),
+        0.6: hexToRgba(def.color, 0.85),
+        1.0: def.color
+      }
+    }).addTo(map);
+  });
+}
+
+// ========== 状態 ==========
+let customers = [];   // { _id, _manual, _name, _addr, _tel, _note, _status, _salesStatus, _lat, _lng, ...excelFields }
+let excelColumns = [];
+let markers = {};     // _id → Leaflet marker
+let idCounter = 0;
+
+// ========== タブ切り替え ==========
+function switchTab(name) {
+  ['manual','excel','gsheet'].forEach(t => {
+    document.getElementById(`tbtn-${t}`).classList.toggle('active', t === name);
+    document.getElementById(`tab-${t}`).classList.toggle('active', t === name);
+  });
+}
+
+// ========== 手動入力 ==========
+async function addManual() {
+  const name = document.getElementById('fName').value.trim();
+  const addr = document.getElementById('fAddr').value.trim();
+  const tel  = document.getElementById('fTel').value.trim();
+  const note = document.getElementById('fNote').value.trim();
+
+  if (!addr) { showToast('⚠️ 住所を入力してください'); return; }
+
+  const btn = document.getElementById('addBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 検索中...';
+
+  const coords = await geocode(addr);
+
+  const id = idCounter++;
+  const salesStatus = document.getElementById('fStatus').value || DEFAULT_SALES_STATUS;
+  const entry = { _id: id, _manual: true, _name: name || `顧客${id+1}`, _addr: addr, _tel: tel, _note: note, _status: coords ? 'ok' : 'error', _salesStatus: salesStatus };
+  if (coords) { entry._lat = coords.lat; entry._lng = coords.lng; }
+  customers.push(entry);
+
+  if (coords) {
+    addMarker(id, coords.lat, coords.lng);
+    map.setView([coords.lat, coords.lng], 15, { animate: true });
+    showToast('✅ ピンを追加しました');
+  } else {
+    showToast('❌ 住所が見つかりませんでした');
+  }
+
+  // フォームリセット
+  document.getElementById('fName').value = '';
+  document.getElementById('fAddr').value = '';
+  document.getElementById('fTel').value = '';
+  document.getElementById('fNote').value = '';
+  btn.disabled = false;
+  btn.textContent = '📍 追加してピン表示';
+
+  renderCustomerList();
+  updateStats();
+  saveData(customers);
+}
+
+// ========== ファイル読込 ==========
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) loadExcel(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => { if (e.target.files[0]) loadExcel(e.target.files[0]); });
+
+let currentWorkbook = null;
+
+function loadExcel(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'binary' });
+      currentWorkbook = wb;
+
+      // シート選択UIを表示
+      const sel = document.getElementById('sheetSelect');
+      sel.innerHTML = wb.SheetNames.map((n, i) => `<option value="${i}">${n}</option>`).join('');
+      document.getElementById('sheetSelector').style.display = 'block';
+
+      // 住所列を含む最初のシートを自動選択
+      const bestIdx = wb.SheetNames.findIndex(name => {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: '' });
+        return rows.some(row => row.some(c => String(c).includes('住所')));
+      });
+      sel.value = bestIdx >= 0 ? bestIdx : 0;
+      onSheetChange();
+    } catch(err) {
+      showToast('❌ ファイルの読み込みに失敗しました');
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+function onSheetChange() {
+  if (!currentWorkbook) return;
+  const idx = parseInt(document.getElementById('sheetSelect').value);
+  const sheetName = currentWorkbook.SheetNames[idx];
+  const ws = currentWorkbook.Sheets[sheetName];
+
+  // ヘッダー行を自動検出（「住所」「お客様名」等を含む行）
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  const headerKeywords = ['住所', 'お客様名', '氏名', '顧客名', '名前'];
+  let headerRow = 0;
+  for (let i = 0; i < Math.min(rows.length, 10); i++) {
+    if (rows[i].some(c => headerKeywords.some(k => String(c).includes(k)))) {
+      headerRow = i;
+      break;
+    }
+  }
+
+  const data = XLSX.utils.sheet_to_json(ws, { defval: '', range: headerRow });
+  const info = document.getElementById('sheetInfo');
+
+  if (!data.length) {
+    info.textContent = '⚠️ データが見つかりません';
+    return;
+  }
+
+  info.textContent = `✅ ${data.length}件 / ヘッダー行: ${headerRow + 1}行目`;
+  importBulkData(data);
+  showToast(`📊 「${sheetName}」から ${data.length}件を読み込みました`);
+}
+
+// ========== Google スプレッドシート読み込み ==========
+async function loadGoogleSheets() {
+  const raw = document.getElementById('gsUrl').value.trim();
+  const match = raw.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  if (!match) { showToast('⚠️ URLが正しくありません'); return; }
+
+  const sheetId = match[1];
+  // gidパラメータがあれば取得（シート番号）
+  const gidMatch = raw.match(/[#&?]gid=(\d+)/);
+  const gid = gidMatch ? gidMatch[1] : '0';
+
+  const btn = document.getElementById('gsBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 読み込み中...';
+
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const csv = await res.text();
+
+    const wb = XLSX.read(csv, { type: 'string' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    if (!data.length) { showToast('❌ データが見つかりません'); return; }
+
+    importBulkData(data);
+    showToast(`🟢 ${data.length}件を読み込みました`);
+  } catch(err) {
+    showToast('❌ 読み込み失敗。シートが公開されているか確認してください');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📥 読み込む';
+  }
+}
+
+// ========== 一括インポート共通処理 ==========
+function importBulkData(data) {
+  excelColumns = Object.keys(data[0]);
+  const imported = data.map(row => ({ ...row, _id: idCounter++, _manual: false, _salesStatus: DEFAULT_SALES_STATUS }));
+  customers = [...customers.filter(c => c._manual), ...imported];
+  setupColumnSelectors();
+  renderCustomerList();
+  document.getElementById('bulkActions').style.display = 'block';
+  document.getElementById('plotBtn').disabled = false;
+}
+
+// ========== カラム設定 ==========
+function setupColumnSelectors() {
+  const noneOpt = '<option value="">（なし）</option>';
+  const opts = excelColumns.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  ['colName','colAddr','colNote','colTel','colStatus'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = (id === 'colAddr' ? '' : noneOpt) + opts;
+  });
+
+  // Step1: カラム名のキーワードマッチ
+  autoSelectByName('colName',   ['お客様名','顧客名','氏名','名前','会社名','社名','name']);
+  autoSelectByName('colAddr',   ['住所','address','所在地','居住地','都道府県']);
+  autoSelectByName('colNote',   ['メモ','備考','note','コメント','備考欄']);
+  autoSelectByName('colTel',    ['電話','TEL','tel','電話番号','phone']);
+  autoSelectByName('colStatus', ['営業ステータス','ステータス','status','STATUS','状態']);
+
+  // Step2: 未マッチの項目はデータの中身で推測
+  autoSelectByData();
+
+  document.getElementById('colConfig').style.display = 'block';
+}
+
+function autoSelectByName(selId, candidates) {
+  const sel = document.getElementById(selId);
+  if (sel.value) return; // 既にセット済みならスキップ
+  for (const c of candidates) {
+    const opt = [...sel.options].find(o =>
+      o.value && (o.value.includes(c) || c.includes(o.value))
+    );
+    if (opt) { sel.value = opt.value; return true; }
+  }
+  return false;
+}
+
+function autoSelectByData() {
+  // データサンプル（最大10行）で各カラムの値を分析
+  const sample = customers.filter(c => !c._manual).slice(0, 10);
+  if (!sample.length) return;
+
+  const PREFS = ['都','道','府','県','北海道','青森','岩手','宮城','秋田','山形','福島',
+    '茨城','栃木','群馬','埼玉','千葉','東京','神奈川','新潟','富山','石川','福井',
+    '山梨','長野','岐阜','静岡','愛知','三重','滋賀','京都','大阪','兵庫','奈良',
+    '和歌山','鳥取','島根','岡山','広島','山口','徳島','香川','愛媛','高知','福岡',
+    '佐賀','長崎','熊本','大分','宮崎','鹿児島','沖縄'];
+  const TEL_RE = /^\d{2,4}[-ー−]\d{2,4}[-ー−]\d{4}$/;
+  const KNOWN_STATUSES = new Set(Object.keys(SALES_STATUSES));
+
+  const scores = {}; // colId → { col → score }
+  const targets = {
+    colAddr:   col => sample.filter(r => PREFS.some(p => String(r[col]||'').includes(p))).length,
+    colTel:    col => sample.filter(r => TEL_RE.test(String(r[col]||'').trim())).length,
+    colName:   col => sample.filter(r => /[様さんくん氏]/.test(String(r[col]||''))).length,
+    colStatus: col => sample.filter(r => KNOWN_STATUSES.has(String(r[col]||'').trim())).length,
+  };
+
+  Object.entries(targets).forEach(([selId, scoreFn]) => {
+    const sel = document.getElementById(selId);
+    if (sel.value) return; // キーワードマッチ済みはスキップ
+
+    let best = null, bestScore = 0;
+    excelColumns.forEach(col => {
+      const score = scoreFn(col);
+      if (score > bestScore) { bestScore = score; best = col; }
+    });
+    if (best && bestScore > 0) sel.value = best;
+  });
+}
+
+// ========== Excel プロット ==========
+document.getElementById('plotBtn').addEventListener('click', plotBulk);
+
+let geocodingAbort = null;   // AbortController
+let geocodingSleepReject = null; // sleep中断用
+
+function cancelGeocoding() {
+  if (geocodingAbort) geocodingAbort.abort();
+  if (geocodingSleepReject) geocodingSleepReject();
+}
+
+async function plotBulk() {
+  const addrCol = document.getElementById('colAddr').value;
+  if (!addrCol) { showToast('⚠️ 住所カラムを選択してください'); return; }
+
+  document.getElementById('plotBtn').disabled = true;
+
+  const pw = document.getElementById('progressWrap');
+  const pb = document.getElementById('progressBar');
+  const pl = document.getElementById('progressLabel');
+  pw.style.display = 'block';
+
+  const excelEntries = customers.filter(c => !c._manual && c._status !== 'ok');
+  let cancelled = false;
+
+  for (let i = 0; i < excelEntries.length; i++) {
+    const c = excelEntries[i];
+    const addr = String(c[addrCol] ?? '').trim();
+    if (!addr) { c._status = 'error'; continue; }
+
+    c._status = 'pending';
+    renderCustomerList();
+
+    pl.textContent = `ジオコーディング中... (${i+1}/${excelEntries.length})`;
+    pb.style.width = `${Math.round((i+1)/excelEntries.length*100)}%`;
+
+    geocodingAbort = new AbortController();
+    const coords = await geocode(addr, geocodingAbort.signal);
+
+    if (geocodingAbort.signal.aborted) { c._status = null; cancelled = true; break; }
+
+    if (coords) {
+      c._status = 'ok';
+      c._lat = coords.lat; c._lng = coords.lng;
+      const name = document.getElementById('colName').value ? String(c[document.getElementById('colName').value] || '') : '';
+      c._name = name || `顧客${c._id+1}`;
+      c._addr = addr;
+      c._tel  = document.getElementById('colTel').value  ? String(c[document.getElementById('colTel').value]  || '') : '';
+      c._note = document.getElementById('colNote').value ? String(c[document.getElementById('colNote').value] || '') : '';
+      // ステータス列があれば反映（一致しない値は未アタックにフォールバック）
+      const statusCol = document.getElementById('colStatus').value;
+      if (statusCol && c[statusCol]) {
+        const val = String(c[statusCol]).trim();
+        c._salesStatus = SALES_STATUSES[val] ? val : DEFAULT_SALES_STATUS;
+      }
+      addMarker(c._id, coords.lat, coords.lng);
+    } else {
+      c._status = 'error';
+    }
+
+    renderCustomerList();
+
+    // 中断可能なsleep（国土地理院APIは連続リクエスト可だが少し間隔を空ける）
+    try {
+      await interruptibleSleep(200);
+    } catch {
+      c._status = c._status === 'pending' ? null : c._status;
+      cancelled = true;
+      break;
+    }
+  }
+
+  geocodingAbort = null;
+  geocodingSleepReject = null;
+  pw.style.display = 'none';
+  document.getElementById('plotBtn').disabled = false;
+
+  if (cancelled) {
+    renderCustomerList();
+    showToast('⏹ ジオコーディングを中止しました');
+    updateStats();
+    saveData(customers);
+    return;
+  }
+
+  const okList = customers.filter(c => c._status === 'ok');
+  if (okList.length) {
+    map.fitBounds(okList.map(c => [c._lat, c._lng]), { padding: [40, 40] });
+  }
+  updateStats();
+  saveData(customers);
+  showToast(`✅ ${okList.length}件を表示しました`);
+}
+
+// ========== カスタムマーカーアイコン ==========
+function createMarkerIcon(salesStatus) {
+  const color = SALES_STATUSES[salesStatus]?.color || '#9e9e9e';
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:18px;height:18px;background:${color};border:2.5px solid white;border-radius:50%;box-shadow:0 1px 5px rgba(0,0,0,0.45)"></div>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+    popupAnchor: [0, -12]
+  });
+}
+
+// ========== マーカー追加 ==========
+function addMarker(id, lat, lng) {
+  const c = customers.find(x => x._id === id);
+  if (!c) return;
+
+  const marker = L.marker([lat, lng], { icon: createMarkerIcon(c._salesStatus) })
+    .bindPopup(buildPopup(c))
+    .addTo(markerGroup);
+
+  marker.on('click', () => {
+    document.querySelectorAll('.customer-item').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById(`ci-${id}`);
+    if (el) { el.classList.add('active'); el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  });
+  markers[id] = marker;
+}
+
+function buildPopup(c) {
+  const statusOpts = Object.keys(SALES_STATUSES).map(s =>
+    `<option value="${s}" ${c._salesStatus === s ? 'selected' : ''}>${SALES_STATUSES[s].icon} ${s}</option>`
+  ).join('');
+  return `
+    <div class="popup-name">📍 ${esc(c._name || '')}</div>
+    ${c._addr ? `<div class="popup-row"><span class="pl">住所</span>${esc(c._addr)}</div>` : ''}
+    ${c._tel  ? `<div class="popup-row"><span class="pl">電話</span>${esc(c._tel)}</div>` : ''}
+    ${c._note ? `<div class="popup-row"><span class="pl">メモ</span>${esc(c._note)}</div>` : ''}
+    <select class="popup-status-select" onchange="setSalesStatus(${c._id}, this.value)">${statusOpts}</select>
+  `;
+}
+
+// ========== 営業ステータス変更 ==========
+function setSalesStatus(id, status) {
+  const c = customers.find(x => x._id === id);
+  if (!c) return;
+  c._salesStatus = status;
+  // マーカーの色を更新
+  const m = markers[id];
+  if (m) {
+    m.setIcon(createMarkerIcon(status));
+    m.setPopupContent(buildPopup(c));
+  }
+  renderCustomerList();
+  updateStats();
+  updateHeatmaps();
+  saveData(customers);
+}
+
+// ========== 顧客リスト描画 ==========
+function renderCustomerList() {
+  const list = document.getElementById('customerList');
+  const filterVal = document.getElementById('filterSelect').value;
+
+  const visible = customers.filter(c => !filterVal || c._salesStatus === filterVal);
+
+  if (!customers.length) {
+    list.innerHTML = '<div class="empty-hint">顧客を追加するとここに一覧が表示されます</div>';
+    return;
+  }
+  if (!visible.length) {
+    list.innerHTML = '<div class="empty-hint">該当する顧客がいません</div>';
+    return;
+  }
+
+  list.innerHTML = visible.map(c => {
+    const geoHtml =
+      c._status === 'ok'      ? '' :
+      c._status === 'error'   ? '<div class="ci-status ci-err">❌ 住所不明</div>' :
+      c._status === 'pending' ? '<div class="ci-status ci-pending">⏳ 処理中...</div>' : '';
+    const ss = c._salesStatus || DEFAULT_SALES_STATUS;
+    const color = SALES_STATUSES[ss]?.color || '#9e9e9e';
+    const salesBadge = `<span class="sales-badge" style="background:${color}">${SALES_STATUSES[ss]?.icon || ''} ${ss}</span>`;
+    return `<div class="customer-item" id="ci-${c._id}" onclick="focusCustomer(${c._id})">
+      <div class="ci-body">
+        <div class="ci-name">${esc(c._name || `顧客${c._id+1}`)}</div>
+        <div class="ci-addr">${esc(c._addr || '')}</div>
+        ${salesBadge}${geoHtml}
+      </div>
+      <button class="ci-del" onclick="event.stopPropagation();deleteCustomer(${c._id})" title="削除">×</button>
+    </div>`;
+  }).join('');
+}
+
+// ========== フォーカス ==========
+function focusCustomer(id) {
+  document.querySelectorAll('.customer-item').forEach(el => el.classList.remove('active'));
+  document.getElementById(`ci-${id}`)?.classList.add('active');
+  const m = markers[id];
+  if (m) { map.setView(m.getLatLng(), 15, { animate: true }); m.openPopup(); }
+}
+
+// ========== 削除 ==========
+function deleteCustomer(id) {
+  customers = customers.filter(c => c._id !== id);
+  if (markers[id]) { markerGroup.removeLayer(markers[id]); delete markers[id]; }
+  renderCustomerList();
+  updateStats();
+  saveData(customers);
+}
+
+// ========== クリア ==========
+function clearAll() {
+  markerGroup.clearLayers();
+  markers = {};
+  customers = [];
+  idCounter = 0;
+  fileInput.value = '';
+  document.getElementById('colConfig').style.display = 'none';
+  document.getElementById('bulkActions').style.display = 'none';
+  document.getElementById('gsUrl').value = '';
+  renderCustomerList();
+  updateStats();
+  saveData(customers);
+  map.setView([36.2, 138.0], 5);
+}
+
+// ========== 統計 ==========
+function updateStats() {
+  const total = customers.length;
+  const bar = document.getElementById('statBar');
+  bar.style.display = total ? 'flex' : 'none';
+  if (!total) return;
+
+  const counts = {};
+  Object.keys(SALES_STATUSES).forEach(s => counts[s] = 0);
+  customers.forEach(c => { if (counts[c._salesStatus] !== undefined) counts[c._salesStatus]++; });
+
+  bar.innerHTML = `<span style="color:#555">📋 ${total}件</span>` +
+    Object.entries(counts).map(([s, n]) =>
+      `<span style="color:${SALES_STATUSES[s].color};font-weight:600">${SALES_STATUSES[s].icon}${n}</span>`
+    ).join('');
+}
+
+// ========== ジオコーディング ==========
+async function geocode(address, signal) {
+  try {
+    // 国土地理院 住所検索API（日本特化・無料・APIキー不要）
+    const url = `https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(address)}`;
+    const res = await fetch(url, { signal });
+    const data = await res.json();
+    if (data.length) {
+      const [lng, lat] = data[0].geometry.coordinates; // GeoJSON形式は[経度, 緯度]
+      return { lat, lng };
+    }
+    return null;
+  } catch { return null; }
+}
+
+function interruptibleSleep(ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(resolve, ms);
+    geocodingSleepReject = () => { clearTimeout(timer); reject(new Error('cancelled')); };
+  });
+}
+
+// ========== トースト ==========
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ========== ユーティリティ ==========
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Enterキーで追加
+document.getElementById('fAddr').addEventListener('keydown', e => { if (e.key === 'Enter') addManual(); });
+
+// ========== マップ上ピン打ちモード ==========
+let pinMode = false;
+let pinPopup = null;
+
+function togglePinMode() {
+  pinMode = !pinMode;
+  const btn = document.getElementById('pinModeBtn');
+  const mapEl = document.getElementById('map');
+  btn.classList.toggle('active', pinMode);
+  mapEl.classList.toggle('pin-mode', pinMode);
+  btn.textContent = pinMode ? '✅ ピン打ちモード ON（クリックで追加）' : '📍 ピン打ちモード';
+  if (!pinMode && pinPopup) { map.closePopup(pinPopup); pinPopup = null; }
+}
+
+// マップクリックでフォームポップアップを表示
+map.on('click', async function(e) {
+  if (!pinMode) return;
+  if (pinPopup) { map.closePopup(pinPopup); }
+
+  const { lat, lng } = e.latlng;
+
+  // 逆ジオコーディング（国土地理院）
+  let addr = '';
+  try {
+    const res = await fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?lat=${lat}&lon=${lng}`);
+    const data = await res.json();
+    addr = data?.results?.lv01Nm || '';
+  } catch {}
+
+  const statusOpts = Object.entries(SALES_STATUSES)
+    .map(([s, d]) => `<option value="${s}">${d.icon} ${s}</option>`).join('');
+
+  const formId = `mpf-${Date.now()}`;
+  const content = `
+    <div class="map-popup-form" style="width:220px">
+      <b style="font-size:13px">📍 新規顧客を追加</b>
+      <div style="margin-top:8px">
+        <span class="popup-label">顧客名</span>
+        <input id="${formId}-name" placeholder="山田太郎">
+        <span class="popup-label">住所</span>
+        <input id="${formId}-addr" value="${addr}">
+        <span class="popup-label">電話番号</span>
+        <input id="${formId}-tel" placeholder="090-0000-0000">
+        <span class="popup-label">メモ</span>
+        <textarea id="${formId}-note" placeholder="備考..."></textarea>
+        <span class="popup-label">営業ステータス</span>
+        <select id="${formId}-status">${statusOpts}</select>
+      </div>
+      <div class="popup-actions">
+        <button class="popup-add-btn" onclick="addPinFromMap('${formId}',${lat},${lng})">追加</button>
+        <button class="popup-cancel-btn" onclick="map.closePopup()">キャンセル</button>
+      </div>
+    </div>`;
+
+  pinPopup = L.popup({ maxWidth: 260, closeButton: false })
+    .setLatLng(e.latlng)
+    .setContent(content)
+    .openOn(map);
+});
+
+function addPinFromMap(formId, lat, lng) {
+  const name   = document.getElementById(`${formId}-name`)?.value.trim();
+  const addr   = document.getElementById(`${formId}-addr`)?.value.trim();
+  const tel    = document.getElementById(`${formId}-tel`)?.value.trim();
+  const note   = document.getElementById(`${formId}-note`)?.value.trim();
+  const status = document.getElementById(`${formId}-status`)?.value || DEFAULT_SALES_STATUS;
+
+  const id = idCounter++;
+  const entry = {
+    _id: id, _manual: true,
+    _name: name || `顧客${id+1}`,
+    _addr: addr, _tel: tel, _note: note,
+    _status: 'ok', _salesStatus: status,
+    _lat: lat, _lng: lng
+  };
+  customers.push(entry);
+  map.closePopup();
+  addMarker(id, lat, lng);
+  renderCustomerList();
+  updateStats();
+  updateHeatmaps();
+  saveData(customers);
+  showToast('✅ ピンを追加しました');
+}
+
+// ========== エクスポート / インポート ==========
+function exportData() {
+  if (!customers.length) { showToast('⚠️ データがありません'); return; }
+  const json = JSON.stringify(customers, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `customermap_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data)) throw new Error();
+      restoreCustomers(data);
+      showToast(`📂 ${data.length}件を読み込みました`);
+    } catch {
+      showToast('❌ ファイルの形式が正しくありません');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ========== 起動時データ復元 ==========
+async function restoreCustomers(data) {
+  markerGroup.clearLayers();
+  markers = {};
+  customers = data;
+  // idCounterを最大値に合わせる
+  idCounter = customers.reduce((max, c) => Math.max(max, c._id + 1), 0);
+  // ピンを再描画
+  const plotted = customers.filter(c => c._status === 'ok' && c._lat && c._lng);
+  plotted.forEach(c => addMarker(c._id, c._lat, c._lng));
+  if (plotted.length) {
+    map.fitBounds(plotted.map(c => [c._lat, c._lng]), { padding: [40, 40] });
+  }
+  renderCustomerList();
+  updateStats();
+  await saveData(customers);
+}
+
+(async () => {
+  const saved = await loadData();
+  if (saved.length) {
+    await restoreCustomers(saved);
+    showToast(`💾 ${saved.length}件のデータを復元しました`);
+  }
+})();
+</script>
+</body>
+</html>
