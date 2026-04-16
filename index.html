@@ -50,7 +50,34 @@
       border-right: 1px solid #ddd;
       overflow: hidden;
       flex-shrink: 0;
+      transition: width 0.25s ease;
     }
+    .sidebar.collapsed { width: 0; border-right: none; }
+
+    /* 折りたたみボタン */
+    .panel-toggle {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 1001;
+      width: 18px;
+      height: 48px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 0 6px 6px 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #888;
+      box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+      transition: left 0.25s ease, right 0.25s ease;
+    }
+    #sidebarToggle { left: 320px; border-radius: 0 6px 6px 0; }
+    #sidebarToggle.collapsed { left: 0; }
+    #rightToggle { right: 320px; border-radius: 6px 0 0 6px; box-shadow: -2px 0 4px rgba(0,0,0,0.1); }
+    #rightToggle.collapsed { right: 0; }
 
     /* タブ */
     .tabs {
@@ -103,12 +130,82 @@
       transition: border-color 0.15s;
       background: white;
     }
+    /* カスタム日付ピッカー */
+    .datepicker-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      z-index: 99999; align-items: center; justify-content: center;
+    }
+    .datepicker-overlay.show { display: flex; }
+    .datepicker-modal {
+      background: white; border-radius: 16px; padding: 20px;
+      width: 340px; max-width: 95vw;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      font-family: inherit;
+    }
+    .datepicker-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+    }
+    .datepicker-header span { font-size: 18px; font-weight: 700; }
+    .datepicker-nav {
+      background: none; border: 1px solid #ddd; border-radius: 8px;
+      width: 38px; height: 38px; font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .datepicker-weekdays {
+      display: grid; grid-template-columns: repeat(7, 1fr); text-align: center;
+      font-size: 12px; font-weight: 700; color: #888; margin-bottom: 6px;
+    }
+    .datepicker-weekdays span:first-child { color: #d93025; }
+    .datepicker-weekdays span:last-child { color: #1a73e8; }
+    .datepicker-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .datepicker-day {
+      aspect-ratio: 1; width: 100%; background: none; border: 1px solid transparent;
+      border-radius: 8px; font-size: 15px; cursor: pointer; font-family: inherit;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.1s;
+    }
+    .datepicker-day:hover { background: #e8f0fe; }
+    .datepicker-day.today { border-color: #1a73e8; color: #1a73e8; font-weight: 700; }
+    .datepicker-day.dp-selected { background: #1a73e8 !important; color: white !important; border-color: #1a73e8; }
+    .datepicker-day.sun { color: #d93025; }
+    .datepicker-day.sat { color: #1a73e8; }
+    .datepicker-actions { display: flex; gap: 8px; margin-top: 14px; }
+    .datepicker-actions button {
+      flex: 1; padding: 11px; border-radius: 8px; font-size: 14px;
+      font-family: inherit; cursor: pointer; font-weight: 600; border: 1px solid #ccc;
+      background: white; color: #555;
+    }
+    .datepicker-actions button.dp-close {
+      background: #f0f4ff; border-color: #c5d5f8; color: #1a73e8;
+    }
+    .datepicker-display {
+      width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 6px;
+      font-size: 13px; min-height: 44px; font-family: inherit; background: white;
+      cursor: pointer; color: #333; text-align: left;
+    }
+    .datepicker-display:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,0.15); }
     .form-group input:focus, .form-group textarea:focus {
       outline: none;
       border-color: #1a73e8;
       box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
     }
     .form-group textarea { resize: vertical; min-height: 60px; }
+    .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 13px;
+      min-height: 44px;
+      font-family: inherit;
+      background: white;
+      cursor: pointer;
+    }
+    .form-group select:focus {
+      outline: none;
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+    }
     .required-mark { color: #d93025; margin-left: 2px; }
 
     /* ---- Excel アップロード ---- */
@@ -177,13 +274,16 @@
 
     /* 右パネル */
     .right-panel {
-      width: 260px;
+      width: 320px;
       background: white;
       display: flex;
       flex-direction: column;
       border-left: 1px solid #ddd;
       overflow: hidden;
       flex-shrink: 0;
+      transition: width 0.25s ease;
+    }
+    .right-panel.collapsed { width: 0; border-left: none; }
     }
     .right-panel-header {
       padding: 10px 14px 6px;
@@ -197,6 +297,30 @@
       align-items: center;
       justify-content: space-between;
     }
+
+    /* 右パネルタブ */
+    .right-tabs {
+      display: flex;
+      border-bottom: 2px solid #e0e0e0;
+      flex-shrink: 0;
+    }
+    .right-tab-btn {
+      flex: 1;
+      padding: 9px 4px;
+      border: none;
+      background: none;
+      font-size: 11px;
+      font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      font-family: inherit;
+      transition: color 0.15s;
+    }
+    .right-tab-btn.active { color: #1a73e8; border-bottom-color: #1a73e8; }
+    .right-tab-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .right-tab-panel.active { display: flex; }
     .customer-list {
       overflow-y: auto;
       flex: 1;
@@ -251,6 +375,19 @@
       font-size: 12px;
       background: white;
     }
+    .maint-filter-btn {
+      padding: 4px 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: white;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      color: #555;
+      white-space: nowrap;
+    }
+    .maint-filter-btn.active.overdue { background: #d93025; border-color: #d93025; font-weight: 700; color: white; }
+    .maint-filter-btn.active.soon    { background: #f9ab00; border-color: #f9ab00; font-weight: 700; color: white; }
 
     /* ポップアップ内ステータス選択 */
     .popup-status-select {
@@ -264,7 +401,8 @@
       cursor: pointer;
     }
 
-    /* 削除ボタン */
+    /* 削除・ナビボタン */
+    .ci-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
     .ci-del {
       background: none;
       border: none;
@@ -277,9 +415,42 @@
       transition: color 0.15s;
     }
     .ci-del:hover { color: #d93025; }
+    .ci-navi-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 3px 7px;
+      border-radius: 4px;
+      border: 1px solid #1a73e8;
+      color: #1a73e8;
+      background: white;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+      line-height: 1.4;
+    }
+    .ci-navi-btn:hover { background: #1a73e8; color: white; }
+
+    /* ポップアップ内ナビボタン */
+    .popup-navi-btn {
+      display: block;
+      margin-top: 8px;
+      padding: 7px 10px;
+      background: #1a73e8;
+      color: white !important;
+      text-decoration: none !important;
+      text-align: center;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .popup-navi-btn:hover { background: #1558b0; color: white !important; }
 
     /* マップ */
-    #map { flex: 1; }
+    #map { flex: 1; position: relative; }
 
     /* ポップアップ */
     .leaflet-popup-content { font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; min-width: 180px; }
@@ -321,8 +492,23 @@
       transition: opacity 0.3s, transform 0.3s;
       pointer-events: none;
       z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      white-space: pre-line;
+      text-align: center;
     }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+    .toast-undo-btn {
+      background: #fff;
+      color: #333;
+      border: none;
+      border-radius: 12px;
+      padding: 3px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
 
     /* Google Sheets */
     .gs-box {
@@ -352,11 +538,10 @@
     /* ピン打ちモードボタン */
     #pinModeBtn {
       position: absolute;
-      top: 80px;
-      left: 50%;
-      transform: translateX(-50%);
+      top: 12px;
+      right: 12px;
       z-index: 1000;
-      padding: 8px 18px;
+      padding: 9px 20px;
       border: 2px solid #1a73e8;
       border-radius: 24px;
       background: white;
@@ -365,14 +550,104 @@
       font-weight: 700;
       cursor: pointer;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      transition: background 0.15s, color 0.15s;
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s, border-color 0.2s;
       font-family: inherit;
+      white-space: nowrap;
     }
     #pinModeBtn.active {
-      background: #1a73e8;
+      background: #e8371b;
+      border-color: #e8371b;
       color: white;
+      box-shadow: 0 0 0 4px rgba(232,55,27,0.25), 0 2px 10px rgba(0,0,0,0.3);
+      animation: pulse-btn 1.5s infinite;
     }
-    #map.pin-mode { cursor: crosshair; }
+    @keyframes pulse-btn {
+      0%   { box-shadow: 0 0 0 4px rgba(232,55,27,0.25), 0 2px 10px rgba(0,0,0,0.3); }
+      50%  { box-shadow: 0 0 0 8px rgba(232,55,27,0.1),  0 2px 10px rgba(0,0,0,0.3); }
+      100% { box-shadow: 0 0 0 4px rgba(232,55,27,0.25), 0 2px 10px rgba(0,0,0,0.3); }
+    }
+    #myLocationBtn {
+      position: absolute;
+      bottom: 30px;
+      right: 12px;
+      z-index: 1000;
+      padding: 8px 14px;
+      border: 2px solid #1a73e8;
+      border-radius: 24px;
+      background: white;
+      color: #1a73e8;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      font-family: inherit;
+    }
+    #myLocationBtn:hover { background: #e8f0fe; }
+    @media (max-width: 768px) {
+      #myLocationBtn { bottom: 70px; }
+    }
+
+    /* ズームスライダー */
+    #zoomSliderWrap {
+      position: absolute;
+      left: 10px;
+      top: 110px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      background: white;
+      border-radius: 12px;
+      padding: 10px 0;
+      width: 40px;
+      box-sizing: border-box;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    #zoomSliderWrap span {
+      font-size: 11px;
+      font-weight: 700;
+      color: #555;
+      min-width: 18px;
+      text-align: center;
+    }
+    #zoomSlider {
+      -webkit-appearance: slider-vertical;
+      appearance: slider-vertical;
+      writing-mode: vertical-lr;
+      direction: rtl;
+      width: 24px;
+      height: 220px;
+      cursor: pointer;
+      accent-color: #1a73e8;
+    }
+    @media (max-width: 768px) {
+      #zoomSliderWrap { display: none; }
+    }
+
+    /* LeafletのズームボタンをスライダーWrapの幅に合わせる */
+    .leaflet-control-zoom {
+      border: none !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+      border-radius: 12px !important;
+      width: 40px !important;
+    }
+    .leaflet-control-zoom a {
+      width: 40px !important;
+      height: 36px !important;
+      line-height: 36px !important;
+      font-size: 18px !important;
+      border-radius: 0 !important;
+      box-sizing: border-box !important;
+    }
+    .leaflet-control-zoom-in  { border-radius: 12px 12px 0 0 !important; }
+    .leaflet-control-zoom-out { border-radius: 0 0 12px 12px !important; }
+
+    #map.pin-mode {
+      cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='36' viewBox='0 0 28 36'%3E%3Cpath d='M14 0C6.3 0 0 6.3 0 14c0 10.5 14 22 14 22S28 24.5 28 14C28 6.3 21.7 0 14 0z' fill='%23e8371b' stroke='white' stroke-width='2'/%3E%3Ccircle cx='14' cy='14' r='5' fill='white'/%3E%3C/svg%3E") 14 36, crosshair;
+      outline: 3px solid #e8371b;
+      outline-offset: -3px;
+    }
 
     /* マップ上ポップアップフォーム */
     .map-popup-form input,
@@ -388,7 +663,7 @@
       box-sizing: border-box;
     }
     .map-popup-form textarea { resize: vertical; min-height: 48px; }
-    .map-popup-form .popup-label { font-size: 11px; font-weight: 700; color: #555; margin-bottom: 2px; display: block; }
+    .map-popup-form .popup-label { font-size: 11px; font-weight: 700; color: #333; margin-bottom: 2px; margin-top: 6px; display: block; background: white; }
     .map-popup-form .popup-actions { display: flex; gap: 6px; margin-top: 4px; }
     .map-popup-form .popup-actions button {
       flex: 1; padding: 6px; border: none; border-radius: 6px;
@@ -430,55 +705,229 @@
       border-radius: 50%;
       flex-shrink: 0;
     }
+
+    /* ========== 巡回ルート ========== */
+    .route-section {
+      border-top: 1px solid #eee;
+      padding: 8px 12px;
+      flex-shrink: 0;
+    }
+
+    /* メンテナンスアラート */
+    .maint-alert-soon { background: #fff8e1 !important; border-color: #f9ab00 !important; }
+    .maint-alert-overdue { background: #fce8e6 !important; border-color: #d93025 !important; }
+    .maint-badge {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      padding: 1px 6px; border-radius: 10px; margin-top: 3px;
+    }
+    .maint-badge-soon { background: #f9ab00; color: white; }
+    .maint-badge-overdue { background: #d93025; color: white; }
+    .maint-badge-ok { background: #e8f0fe; color: #1a73e8; }
+
+    /* アラートモーダル */
+    .alert-modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 9000;
+      align-items: center; justify-content: center;
+    }
+    .alert-modal-overlay.show { display: flex; }
+    .alert-modal {
+      background: white; border-radius: 12px; padding: 24px;
+      max-width: 480px; width: 90%; max-height: 80vh;
+      display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .alert-modal h2 { font-size: 16px; margin-bottom: 12px; }
+    .alert-modal-list { overflow-y: auto; flex: 1; margin-bottom: 12px; }
+    .alert-modal-item {
+      padding: 10px 12px; border-radius: 8px; margin-bottom: 6px;
+      border: 1px solid #eee; font-size: 13px;
+    }
+    .alert-modal-item .ami-name { font-weight: 700; }
+    .alert-modal-item .ami-date { font-size: 11px; color: #888; margin-top: 2px; }
+    .alert-modal-close {
+      width: 100%; padding: 10px; background: #1a73e8; color: white;
+      border: none; border-radius: 8px; font-size: 14px;
+      font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .route-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #555;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+    .route-body { display: none; }
+    .route-body.open { display: block; }
+    .route-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+    .route-row label { font-size: 11px; font-weight: 600; color: #555; min-width: 52px; }
+    .route-row input, .route-row select {
+      flex: 1; padding: 4px 6px; border: 1px solid #ccc;
+      border-radius: 6px; font-size: 11px; font-family: inherit;
+    }
+    .route-btn-row { display: flex; gap: 6px; margin-top: 4px; }
+    .route-calc-btn {
+      flex: 1; padding: 6px; background: #1a73e8; color: white;
+      border: none; border-radius: 6px; font-size: 12px;
+      font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .route-clear-btn {
+      padding: 6px 10px; background: #f1f3f4; color: #444;
+      border: none; border-radius: 6px; font-size: 12px;
+      font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .route-result {
+      margin-top: 8px; font-size: 11px; display: none;
+    }
+    .route-result.show { display: block; }
+    .route-list { list-style: none; margin: 6px 0; padding: 0; max-height: 180px; overflow-y: auto; }
+    .route-list-item {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 6px; margin-bottom: 3px;
+      background: white; border: 1px solid #dde3f0;
+      border-radius: 6px; cursor: grab; user-select: none;
+    }
+    .route-list-item.dragging { opacity: 0.4; }
+    .route-list-item.drag-over { border-color: #1a73e8; background: #e8f0fe; }
+    .route-num {
+      min-width: 20px; height: 20px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: white; flex-shrink: 0;
+    }
+    .route-item-name { flex: 1; font-size: 11px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .route-item-addr { font-size: 10px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .route-drag-handle { color: #bbb; font-size: 13px; cursor: grab; }
+    .route-summary { padding: 6px 8px; background: #f0f4ff; border-radius: 6px; margin-bottom: 4px; }
+    .route-navi-btn {
+      display: block; width: 100%; margin-top: 6px; padding: 7px;
+      background: #1a73e8; color: white !important; text-decoration: none !important;
+      text-align: center; border-radius: 6px; font-size: 12px; font-weight: 700;
+    }
+    .route-navi-btn:hover { background: #1558b0; }
+    /* 番号付きピン */
+    .numbered-pin {
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 2.5px solid white; box-shadow: 0 1px 5px rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: white; line-height: 1;
+    }
+
+    /* ========== モバイル対応 ========== */
+    .mobile-tab-bar { display: none; }
+    .mobile-panel { display: none; }
+
+    @media (max-width: 768px) {
+      .main { position: relative; }
+
+      /* PC用パネルを隠す */
+      .sidebar, .right-panel { display: none; }
+
+      /* 折りたたみボタンを隠す */
+      #sidebarToggle, #rightToggle { display: none; }
+
+      /* マップをフル画面に */
+      #map { width: 100%; height: 100%; }
+
+      /* モバイルパネル */
+      .mobile-panel {
+        display: none;
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 56px;
+        background: white;
+        overflow-y: auto;
+        z-index: 1100;
+        padding: 12px;
+      }
+      .mobile-panel.active { display: block; }
+
+      /* ピン打ちボタン位置調整 */
+      #pinModeBtn { top: 10px; right: 10px; font-size: 12px; padding: 7px 14px; }
+
+      /* 下部タブバー */
+      .mobile-tab-bar {
+        display: flex;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        height: 56px;
+        background: white;
+        border-top: 1px solid #ddd;
+        z-index: 600;
+      }
+      .mobile-tab-bar button {
+        flex: 1;
+        border: none;
+        background: none;
+        font-size: 11px;
+        font-weight: 600;
+        color: #999;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        transition: color 0.15s;
+      }
+      .mobile-tab-bar button .mtab-icon { font-size: 20px; line-height: 1; }
+      .mobile-tab-bar button.active { color: #1a73e8; }
+      .mobile-tab-bar button.active .mtab-icon { filter: none; }
+
+      /* モバイルパネル内の顧客リスト */
+      .mobile-customer-list .customer-item { padding: 14px 14px; border-bottom: 1px solid #f0f0f0; }
+      .mobile-customer-list .ci-name { font-size: 16px; }
+      .mobile-customer-list .ci-addr { font-size: 13px; white-space: normal; }
+      .mobile-customer-list .ci-navi-btn {
+        font-size: 22px; padding: 8px 10px; opacity: 1;
+        background: #e8f0fe; border-radius: 8px;
+      }
+      .mobile-customer-list .ci-del { font-size: 22px; padding: 8px 6px; }
+      .mobile-customer-list .sales-badge { font-size: 12px; padding: 3px 10px; }
+
+      /* モバイルパネル内のナビボタン */
+      .mobile-customer-list .popup-navi-btn { font-size: 14px; padding: 12px; }
+
+      /* モバイル統計バー */
+      .mobile-stat-bar {
+        display: flex; flex-wrap: wrap; gap: 6px 10px;
+        padding: 8px 12px; background: #f8f9fa;
+        border-radius: 8px; margin-bottom: 8px; font-size: 12px;
+      }
+
+      /* モバイルフォーム */
+      .mobile-form .form-group { margin-bottom: 14px; }
+      .mobile-form .form-group label { font-size: 13px; margin-bottom: 6px; }
+      .mobile-form .form-group input,
+      .mobile-form .form-group textarea,
+      .mobile-form .form-group select {
+        width: 100%; padding: 12px 14px;
+        border: 1px solid #ccc; border-radius: 8px;
+        font-size: 16px; font-family: inherit;
+        background: white; -webkit-appearance: none; appearance: none;
+      }
+      .mobile-form .form-group .datepicker-display {
+        min-height: 52px; font-size: 16px;
+      }
+      .mobile-form .form-group textarea { resize: vertical; min-height: 80px; }
+      .mobile-form .form-group input:focus,
+      .mobile-form .form-group textarea:focus,
+      .mobile-form .form-group select:focus {
+        outline: none; border-color: #1a73e8;
+        box-shadow: 0 0 0 3px rgba(26,115,232,0.15);
+      }
+      .mobile-form .btn { padding: 14px; font-size: 16px; border-radius: 10px; }
+
+      /* ピン打ちポップアップのモバイル対応 */
+      .map-popup-form input,
+      .map-popup-form select,
+      .map-popup-form textarea { font-size: 16px !important; padding: 8px 10px !important; }
+      .map-popup-form .popup-actions button { padding: 10px !important; font-size: 14px !important; }
+    }
   </style>
 </head>
 <body>
-
-<!-- ===== パスワード画面 ===== -->
-<div id="pw-overlay" style="
-  position:fixed;inset:0;background:#1a73e8;
-  display:flex;align-items:center;justify-content:center;
-  z-index:99999;flex-direction:column;gap:16px;
-">
-  <div style="background:white;border-radius:16px;padding:40px 36px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.2);width:300px;">
-    <div style="font-size:36px;margin-bottom:8px;">🗺️</div>
-    <h2 style="font-size:18px;font-weight:700;color:#1a73e8;margin-bottom:4px;">顧客マップ</h2>
-    <p style="font-size:13px;color:#888;margin-bottom:20px;">パスワードを入力してください</p>
-    <input id="pw-input" type="password" placeholder="パスワード"
-      style="width:100%;padding:10px 12px;border:1px solid #ccc;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:10px;outline:none;"
-      onkeydown="if(event.key==='Enter')checkPw()"
-    />
-    <div id="pw-error" style="color:#d93025;font-size:12px;margin-bottom:8px;display:none;">パスワードが違います</div>
-    <button onclick="checkPw()" style="
-      width:100%;padding:10px;background:#1a73e8;color:white;
-      border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;
-    ">ログイン</button>
-  </div>
-</div>
-<script>
-  (function(){
-    var h='072989195585acb0e84fbaa5655b112118f0ad3423697891e9ed1ad11cf24f6e';
-    function sha256(s){
-      var buf=new TextEncoder().encode(s);
-      return crypto.subtle.digest('SHA-256',buf).then(function(b){
-        return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0')}).join('');
-      });
-    }
-    window.checkPw=function(){
-      var v=document.getElementById('pw-input').value;
-      sha256(v).then(function(d){
-        if(d===h){
-          document.getElementById('pw-overlay').style.display='none';
-        } else {
-          document.getElementById('pw-error').style.display='block';
-          document.getElementById('pw-input').value='';
-          document.getElementById('pw-input').focus();
-        }
-      });
-    };
-    document.getElementById('pw-input').focus();
-  })();
-</script>
 
 <header>
   <span>📍</span>
@@ -513,6 +962,11 @@
         <div class="form-group">
           <label>電話番号</label>
           <input type="text" id="fTel" placeholder="例：03-1234-5678">
+        </div>
+        <div class="form-group">
+          <label style="font-size:11px">メンテナンス予定日</label>
+          <button type="button" class="datepicker-display" id="fMaintDate-display" onclick="openDatePicker('fMaintDate')">日付を選択</button>
+          <input type="hidden" id="fMaintDate">
         </div>
         <div class="form-group">
           <label>メモ</label>
@@ -583,6 +1037,10 @@
           <label>🏷 ステータス</label>
           <select id="colStatus"></select>
         </div>
+        <div class="col-row">
+          <label>🔧 メンテナンス日</label>
+          <select id="colMaint"></select>
+        </div>
       </div>
 
       <div id="bulkActions" style="display:none">
@@ -602,60 +1060,210 @@
 
   </div><!-- /sidebar -->
 
-  <!-- マップ -->
-  <div id="map"></div>
+  <!-- 左パネル折りたたみボタン -->
+  <button id="sidebarToggle" class="panel-toggle" onclick="toggleSidebar()" title="左パネルを折りたたむ">◀</button>
 
-  <!-- ピン打ちモードボタン（マップ上に浮かせる） -->
-  <button id="pinModeBtn" onclick="togglePinMode()" title="マップをクリックしてピンを打つ">
-    📍 ピン打ちモード
-  </button>
+  <!-- マップ -->
+  <div id="map">
+    <!-- ピン打ちモードボタン（マップ右上に浮かせる） -->
+    <button id="pinModeBtn" onclick="event.stopPropagation();togglePinMode()" title="マップをクリックしてピンを打つ">
+      📍 ピン打ちモード
+    </button>
+    <!-- 現在地ボタン -->
+    <button id="myLocationBtn" onclick="event.stopPropagation();goToMyLocation()" title="現在地に移動">📍 現在地</button>
+    <!-- ズームスライダー -->
+    <div id="zoomSliderWrap" onclick="event.stopPropagation()">
+      <span id="zoomLabel">5</span>
+      <input type="range" id="zoomSlider" min="3" max="18" value="5" step="1"
+        oninput="event.stopPropagation();map.setZoom(+this.value)">
+    </div>
+  </div>
+
+  <!-- 右パネル折りたたみボタン -->
+  <button id="rightToggle" class="panel-toggle" onclick="toggleRightPanel()" title="右パネルを折りたたむ">▶</button>
 
   <!-- 右パネル：顧客管理 -->
   <div class="right-panel">
 
-    <!-- ヘッダー -->
-    <div class="right-panel-header">
-      <span>顧客一覧</span>
-      <button onclick="clearAll()" style="background:#d93025;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer">🗑 全て削除</button>
+    <!-- タブバー -->
+    <div class="right-tabs">
+      <button class="right-tab-btn active" id="rtab-list" onclick="switchRightTab('list')">👥 顧客一覧</button>
+      <button class="right-tab-btn" id="rtab-route" onclick="switchRightTab('route')">🔄 ルート</button>
+      <button class="right-tab-btn" id="rtab-settings" onclick="switchRightTab('settings')">⚙️ 設定</button>
     </div>
 
-    <!-- フィルター -->
-    <div class="filter-bar">
-      <select id="filterSelect" onchange="renderCustomerList()">
-        <option value="">すべて表示</option>
-      </select>
-    </div>
-
-    <!-- ヒートマップ -->
-    <div class="heatmap-section">
-      <div class="heatmap-title" style="display:flex;align-items:center;justify-content:space-between">
-        <span>🌡 ヒートマップ</span>
-        <label style="font-size:11px;font-weight:600;color:#1a73e8;cursor:pointer;display:flex;align-items:center;gap:3px">
-          <input type="checkbox" id="heatAllCheck" onchange="toggleAllHeat(this.checked)"> すべて
-        </label>
+    <!-- タブ①：顧客一覧 -->
+    <div class="right-tab-panel active" id="rpanel-list">
+      <div class="right-panel-header">
+        <span>顧客一覧</span>
       </div>
-      <div class="heatmap-checks" id="heatmapChecks"></div>
+      <div class="filter-bar" style="gap:4px">
+        <input id="searchInput" type="text" placeholder="🔍 顧客名・住所で検索..." oninput="renderCustomerList()" style="flex:1;padding:4px 8px;border:1px solid #ccc;border-radius:6px;font-size:12px;font-family:inherit">
+        <button onclick="document.getElementById('searchInput').value='';renderCustomerList()" style="background:none;border:none;color:#aaa;font-size:14px;cursor:pointer;padding:0 2px" title="クリア">✕</button>
+      </div>
+      <div class="filter-bar">
+        <select id="filterSelect" onchange="renderCustomerList()">
+          <option value="">すべて表示</option>
+        </select>
+      </div>
+      <div class="filter-bar" style="gap:4px">
+        <button id="maintFilterOverdue" class="maint-filter-btn overdue" onclick="toggleMaintFilter('overdue')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="11" viewBox="0 0 24 22" style="vertical-align:middle;margin-right:3px"><path d="M12 1L1 21h22L12 1z" fill="#d93025" stroke="white" stroke-width="1.5" stroke-linejoin="round"/><rect x="11" y="9" width="2" height="6" fill="white" rx="1"/><rect x="11" y="17" width="2" height="2" fill="white" rx="1"/></svg>期限切れ</button>
+        <button id="maintFilterSoon"    class="maint-filter-btn soon"    onclick="toggleMaintFilter('soon')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="11" viewBox="0 0 24 22" style="vertical-align:middle;margin-right:3px"><path d="M12 1L1 21h22L12 1z" fill="#f9ab00" stroke="white" stroke-width="1.5" stroke-linejoin="round"/><rect x="11" y="9" width="2" height="6" fill="white" rx="1"/><rect x="11" y="17" width="2" height="2" fill="white" rx="1"/></svg>もうすぐ</button>
+      </div>
+      <div class="heatmap-section">
+        <div class="heatmap-title" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="toggleHeatmapPanel()">
+          <span>🌡 ヒートマップ</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <label style="font-size:11px;font-weight:600;color:#1a73e8;cursor:pointer;display:flex;align-items:center;gap:3px" onclick="event.stopPropagation()">
+              <input type="checkbox" id="heatAllCheck" onchange="toggleAllHeat(this.checked)"> すべて
+            </label>
+            <span id="heatToggleIcon">▶</span>
+          </div>
+        </div>
+        <div id="heatmapBody" style="display:none">
+          <div class="heatmap-checks" id="heatmapChecks"></div>
+        </div>
+      </div>
+      <div class="customer-list" id="customerList">
+        <div class="empty-hint">顧客を追加するとここに一覧が表示されます</div>
+      </div>
+      <div class="stat-bar" id="statBar" style="display:none;flex-wrap:wrap;gap:6px 12px;"></div>
     </div>
 
-    <!-- 顧客リスト -->
-    <div class="customer-list" id="customerList">
-      <div class="empty-hint">顧客を追加するとここに一覧が表示されます</div>
+    <!-- タブ②：ルート -->
+    <div class="right-tab-panel" id="rpanel-route">
+      <div style="padding:12px;flex-shrink:0">
+        <div class="route-row">
+          <label>出発地</label>
+          <button onclick="useCurrentLocation()" style="padding:3px 7px;border:1px solid #ccc;border-radius:6px;font-size:15px;cursor:pointer;background:white;line-height:1" title="現在地を取得">📍</button>
+          <input id="routeOriginAddr" placeholder="または住所を入力">
+        </div>
+        <div style="font-size:11px;color:#888;margin-bottom:6px">対象：顧客一覧の絞り込み結果</div>
+        <div class="route-btn-row">
+          <button class="route-calc-btn" onclick="calcRoute()">🔄 最適順を計算</button>
+          <button class="route-clear-btn" onclick="clearRoute()">✕ クリア</button>
+        </div>
+        <div class="route-result" id="routeResult">
+          <div class="route-summary" id="routeResultText"></div>
+          <ul class="route-list" id="routeList"></ul>
+          <a id="routeNaviBtn" class="route-navi-btn" href="#" target="_blank" rel="noopener">🗺️ Googleマップでルートナビ</a>
+        </div>
+      </div>
+      <div style="border-top:1px solid #eee;padding:6px 12px 4px;font-size:11px;font-weight:700;color:#888;flex-shrink:0">対象顧客</div>
+      <div class="customer-list" id="routeTargetList" style="flex:1"></div>
     </div>
 
-    <!-- 統計バー -->
-    <div class="stat-bar" id="statBar" style="display:none;flex-wrap:wrap;gap:6px 12px;">
-    </div>
-
-    <!-- データバー -->
-    <div style="padding:6px 10px;background:#f8f9fa;border-top:1px solid #e0e0e0;display:flex;gap:6px;flex-shrink:0">
-      <button onclick="exportData()" style="flex:1;padding:5px;border:1px solid #ccc;border-radius:6px;background:white;font-size:11px;cursor:pointer;font-weight:600">💾 エクスポート</button>
-      <label style="flex:1;padding:5px;border:1px solid #ccc;border-radius:6px;background:white;font-size:11px;cursor:pointer;font-weight:600;text-align:center">
-        📂 インポート<input type="file" accept=".json" id="importInput" style="display:none" onchange="importData(event)">
-      </label>
+    <!-- タブ③：設定 -->
+    <div class="right-tab-panel" id="rpanel-settings">
+      <div style="padding:12px;display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:11px;font-weight:700;color:#888;margin-bottom:4px">データ管理</div>
+        <button onclick="exportData('xlsx')" style="padding:10px;border:1px solid #1e8e3e;border-radius:6px;background:white;color:#1e8e3e;font-size:12px;cursor:pointer;font-weight:400;text-align:left">📊 Excel保存</button>
+        <button onclick="exportData('json')" style="padding:10px;border:1px solid #ccc;border-radius:6px;background:white;font-size:12px;cursor:pointer;font-weight:400;text-align:left">💾 バックアップ</button>
+        <label style="padding:10px;border:1px solid #ccc;border-radius:6px;background:white;font-size:12px;cursor:pointer;font-weight:400">
+          ↩️ バックアップ復元<input type="file" accept=".json" id="importInput" style="display:none" onchange="importData(event)">
+        </label>
+        <div style="font-size:11px;font-weight:700;color:#888;margin-top:8px;margin-bottom:4px">メンテナンス通知</div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid #ccc;border-radius:6px;background:white">
+          <span style="font-size:12px;flex:1">🔔 何日前からアラート</span>
+          <input type="number" id="maintAlertDaysInput" value="30" min="1" max="365" style="width:60px;padding:4px;border:1px solid #ccc;border-radius:4px;font-size:12px;text-align:right;font-family:inherit" onchange="saveMaintAlertDays(this.value)">
+          <span style="font-size:12px;color:#888">日前</span>
+        </div>
+        <button onclick="showMaintAlerts()" style="padding:10px;border:1px solid #f9ab00;border-radius:6px;background:white;color:#e37400;font-size:12px;cursor:pointer;font-weight:600;text-align:left">🔔 アラート一覧を確認</button>
+        <div style="font-size:11px;font-weight:700;color:#888;margin-top:8px;margin-bottom:4px">顧客データ</div>
+        <button onclick="clearAll()" style="padding:10px;background:#fff0f0;border:1px solid #d93025;border-radius:6px;color:#d93025;font-size:12px;cursor:pointer;font-weight:600;text-align:left">🗑 全て削除</button>
+      </div>
     </div>
 
   </div><!-- /right-panel -->
 
+  <!-- モバイル用：顧客一覧パネル -->
+  <div class="mobile-panel" id="mobile-panel-list">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:14px;font-weight:700;color:#888">顧客一覧</div>
+      <div style="display:flex;gap:6px">
+        <select id="mobileFilterSelect" onchange="renderCustomerList()" style="font-size:12px;padding:4px 6px;border:1px solid #ccc;border-radius:6px;background:white"></select>
+        <button onclick="clearAll()" style="background:#d93025;color:white;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer">🗑</button>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px">
+      <input id="mobileSearchInput" type="text" placeholder="🔍 顧客名・住所で検索..." oninput="renderCustomerList()" style="flex:1;padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;font-family:inherit">
+      <button onclick="document.getElementById('mobileSearchInput').value='';renderCustomerList()" style="background:none;border:none;color:#aaa;font-size:16px;cursor:pointer;padding:0 2px" title="クリア">✕</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button id="mobileMaintFilterOverdue" class="maint-filter-btn overdue" style="flex:1" onclick="toggleMaintFilter('overdue')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="11" viewBox="0 0 24 22" style="vertical-align:middle;margin-right:3px"><path d="M12 1L1 21h22L12 1z" fill="#d93025" stroke="white" stroke-width="1.5" stroke-linejoin="round"/><rect x="11" y="9" width="2" height="6" fill="white" rx="1"/><rect x="11" y="17" width="2" height="2" fill="white" rx="1"/></svg>期限切れ</button>
+      <button id="mobileMaintFilterSoon"    class="maint-filter-btn soon"    style="flex:1" onclick="toggleMaintFilter('soon')"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="11" viewBox="0 0 24 22" style="vertical-align:middle;margin-right:3px"><path d="M12 1L1 21h22L12 1z" fill="#f9ab00" stroke="white" stroke-width="1.5" stroke-linejoin="round"/><rect x="11" y="9" width="2" height="6" fill="white" rx="1"/><rect x="11" y="17" width="2" height="2" fill="white" rx="1"/></svg>もうすぐ</button>
+    </div>
+    <div class="mobile-stat-bar" id="mobileStatBar" style="display:none"></div>
+    <div class="customer-list mobile-customer-list" id="mobileCustomerList">
+      <div class="empty-hint">顧客を追加するとここに一覧が表示されます</div>
+    </div>
+  </div>
+
+  <!-- モバイル用：入力フォーム -->
+  <div class="mobile-panel" id="mobile-panel-add">
+    <div style="font-size:16px;font-weight:700;color:#333;margin-bottom:14px">📍 顧客を追加</div>
+    <div class="mobile-form">
+      <div class="form-group">
+        <label>顧客名</label>
+        <input type="text" id="mfName" placeholder="例：山田太郎">
+      </div>
+      <div class="form-group">
+        <label>住所 <span class="required-mark">*</span></label>
+        <input type="text" id="mfAddr" placeholder="例：東京都渋谷区渋谷1-1-1">
+      </div>
+      <div class="form-group">
+        <label>電話番号</label>
+        <input type="tel" id="mfTel" placeholder="例：03-1234-5678">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px">メンテナンス予定日</label>
+        <button type="button" class="datepicker-display" id="mfMaintDate-display" onclick="openDatePicker('mfMaintDate')">日付を選択</button>
+        <input type="hidden" id="mfMaintDate">
+      </div>
+      <div class="form-group">
+        <label>メモ</label>
+        <textarea id="mfNote" placeholder="備考など..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>営業ステータス</label>
+        <select id="mfStatus"></select>
+      </div>
+      <button class="btn btn-success" id="mobileAddBtn" onclick="mobileAddManual()">📍 追加してピン表示</button>
+    </div>
+    <div style="margin-top:16px;font-size:12px;color:#888;background:#f0f4ff;border-radius:8px;padding:10px;text-align:center">
+      💡 地図タブの「ピン打ちモード」でも追加できます
+    </div>
+  </div>
+
+  <!-- モバイル用：設定パネル -->
+  <div class="mobile-panel" id="mobile-panel-input">
+    <div style="font-size:16px;font-weight:700;color:#333;margin-bottom:14px">⚙️ 設定</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="exportData('xlsx')" style="padding:14px;border:1px solid #1e8e3e;border-radius:8px;background:white;color:#1e8e3e;font-size:14px;cursor:pointer;font-weight:600;text-align:left">📊 Excel保存</button>
+      <button onclick="exportData('json')" style="padding:14px;border:1px solid #ccc;border-radius:8px;background:white;font-size:14px;cursor:pointer;font-weight:600;text-align:left">💾 バックアップ保存</button>
+      <label style="padding:14px;border:1px solid #ccc;border-radius:8px;background:white;font-size:14px;cursor:pointer;font-weight:600">
+        ↩️ バックアップ復元<input type="file" accept=".json" style="display:none" onchange="importData(event)">
+      </label>
+      <button onclick="clearAll()" style="padding:14px;background:#fff0f0;border:1px solid #d93025;border-radius:8px;color:#d93025;font-size:14px;cursor:pointer;font-weight:600;text-align:left">🗑 全て削除</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- モバイル用タブバー -->
+<div class="mobile-tab-bar">
+  <button id="mtab-map" class="active" onclick="switchMobileTab('map')">
+    <span class="mtab-icon">🗺️</span>地図
+  </button>
+  <button id="mtab-list" onclick="switchMobileTab('list')">
+    <span class="mtab-icon">📋</span>一覧
+  </button>
+  <button id="mtab-add" onclick="switchMobileTab('add')">
+    <span class="mtab-icon">➕</span>入力
+  </button>
+  <button id="mtab-input" onclick="switchMobileTab('input')">
+    <span class="mtab-icon">⚙️</span>設定
+  </button>
 </div>
 
 <!-- トースト -->
@@ -680,6 +1288,28 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 const markerGroup = L.layerGroup().addTo(map);
 
+// ズームスライダー同期
+(function() {
+  const wrap   = document.getElementById('zoomSliderWrap');
+  const slider = document.getElementById('zoomSlider');
+  const label  = document.getElementById('zoomLabel');
+
+  // LeafletにスライダーのDragイベントを奪わせない
+  L.DomEvent.disableClickPropagation(wrap);
+  L.DomEvent.disableScrollPropagation(wrap);
+  ['mousedown','touchstart','dblclick','pointerdown'].forEach(ev => {
+    wrap.addEventListener(ev, e => e.stopPropagation());
+  });
+
+  const sync = () => {
+    const z = map.getZoom();
+    slider.value = z;
+    label.textContent = z;
+  };
+  map.on('zoomend', sync);
+  sync();
+})();
+
 // ========== 営業ステータス定義 ==========
 const SALES_STATUSES = {
   '未アタック': { color: '#9e9e9e', icon: '⬜' },
@@ -693,17 +1323,30 @@ const DEFAULT_SALES_STATUS = '未アタック';
 // フィルター選択肢 & ヒートマップチェックボックスを初期化
 (function initControls() {
   const sel = document.getElementById('filterSelect');
+  const mSel = document.getElementById('mobileFilterSelect');
   const fStatus = document.getElementById('fStatus');
   const heatChecks = document.getElementById('heatmapChecks');
   Object.entries(SALES_STATUSES).forEach(([s, def]) => {
-    // フィルター
+    // フィルター（PC）
     const o = document.createElement('option');
     o.value = s; o.textContent = def.icon + ' ' + s;
     sel.appendChild(o);
+    // フィルター（モバイル）
+    const om = document.createElement('option');
+    om.value = s; om.textContent = def.icon + ' ' + s;
+    if (mSel) mSel.appendChild(om);
+    // ルートステータスフィルター
+    const or_ = document.createElement('option');
+    or_.value = s; or_.textContent = def.icon + ' ' + s;
+    document.getElementById('routeStatusFilter')?.appendChild(or_);
     // 手動入力フォームのステータス
     const o2 = document.createElement('option');
     o2.value = s; o2.textContent = def.icon + ' ' + s;
     fStatus.appendChild(o2);
+    // モバイル手動入力フォームのステータス
+    const o3 = document.createElement('option');
+    o3.value = s; o3.textContent = def.icon + ' ' + s;
+    document.getElementById('mfStatus')?.appendChild(o3);
     // ヒートマップチェックボックス
     const label = document.createElement('label');
     label.className = 'heatmap-check-row';
@@ -723,6 +1366,14 @@ function hexToRgba(hex, alpha) {
   const g = parseInt(hex.slice(3,5), 16);
   const b = parseInt(hex.slice(5,7), 16);
   return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function toggleHeatmapPanel() {
+  const body = document.getElementById('heatmapBody');
+  const icon = document.getElementById('heatToggleIcon');
+  const open = body.style.display === 'none';
+  body.style.display = open ? '' : 'none';
+  icon.textContent = open ? '▼' : '▶';
 }
 
 function toggleAllHeat(checked) {
@@ -754,12 +1405,12 @@ function updateHeatmaps() {
 
     heatLayers[status] = L.heatLayer(points, {
       radius: 60,
-      blur: 40,
-      minOpacity: 0.5,
+      blur: 50,
+      minOpacity: 0.2,
       gradient: {
-        0.2: hexToRgba(def.color, 0.6),
-        0.6: hexToRgba(def.color, 0.85),
-        1.0: def.color
+        0.2: hexToRgba(def.color, 0.25),
+        0.6: hexToRgba(def.color, 0.45),
+        1.0: hexToRgba(def.color, 0.65)
       }
     }).addTo(map);
   });
@@ -785,6 +1436,7 @@ async function addManual() {
   const addr = document.getElementById('fAddr').value.trim();
   const tel  = document.getElementById('fTel').value.trim();
   const note = document.getElementById('fNote').value.trim();
+  const maintDate = document.getElementById('fMaintDate').value;
 
   if (!addr) { showToast('⚠️ 住所を入力してください'); return; }
 
@@ -796,7 +1448,7 @@ async function addManual() {
 
   const id = idCounter++;
   const salesStatus = document.getElementById('fStatus').value || DEFAULT_SALES_STATUS;
-  const entry = { _id: id, _manual: true, _name: name || `顧客${id+1}`, _addr: addr, _tel: tel, _note: note, _status: coords ? 'ok' : 'error', _salesStatus: salesStatus };
+  const entry = { _id: id, _manual: true, _name: name || `顧客${id+1}`, _addr: addr, _tel: tel, _note: note, _maintDate: maintDate || '', _status: coords ? 'ok' : 'error', _salesStatus: salesStatus };
   if (coords) { entry._lat = coords.lat; entry._lng = coords.lng; }
   customers.push(entry);
 
@@ -813,6 +1465,53 @@ async function addManual() {
   document.getElementById('fAddr').value = '';
   document.getElementById('fTel').value = '';
   document.getElementById('fNote').value = '';
+  document.getElementById('fMaintDate').value = '';
+  document.getElementById('fMaintDate-display').textContent = '日付を選択';
+  btn.disabled = false;
+  btn.textContent = '📍 追加してピン表示';
+
+  renderCustomerList();
+  updateStats();
+  saveData(customers);
+}
+
+// ========== モバイル手動入力 ==========
+async function mobileAddManual() {
+  const name = document.getElementById('mfName').value.trim();
+  const addr = document.getElementById('mfAddr').value.trim();
+  const tel  = document.getElementById('mfTel').value.trim();
+  const note = document.getElementById('mfNote').value.trim();
+  const maintDate = document.getElementById('mfMaintDate').value;
+
+  if (!addr) { showToast('⚠️ 住所を入力してください'); return; }
+
+  const btn = document.getElementById('mobileAddBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 検索中...';
+
+  const coords = await geocode(addr);
+
+  const id = idCounter++;
+  const salesStatus = document.getElementById('mfStatus').value || DEFAULT_SALES_STATUS;
+  const entry = { _id: id, _manual: true, _name: name || `顧客${id+1}`, _addr: addr, _tel: tel, _note: note, _maintDate: maintDate || '', _status: coords ? 'ok' : 'error', _salesStatus: salesStatus };
+  if (coords) { entry._lat = coords.lat; entry._lng = coords.lng; }
+  customers.push(entry);
+
+  if (coords) {
+    addMarker(id, coords.lat, coords.lng);
+    switchMobileTab('map');
+    map.setView([coords.lat, coords.lng], 15, { animate: true });
+    showToast('✅ ピンを追加しました');
+  } else {
+    showToast('❌ 住所が見つかりませんでした');
+  }
+
+  document.getElementById('mfName').value = '';
+  document.getElementById('mfAddr').value = '';
+  document.getElementById('mfTel').value = '';
+  document.getElementById('mfNote').value = '';
+  document.getElementById('mfMaintDate').value = '';
+  document.getElementById('mfMaintDate-display').textContent = '日付を選択';
   btn.disabled = false;
   btn.textContent = '📍 追加してピン表示';
 
@@ -943,10 +1642,11 @@ function importBulkData(data) {
 // ========== カラム設定 ==========
 function setupColumnSelectors() {
   const noneOpt = '<option value="">（なし）</option>';
+  const addrNoneOpt = '<option value="">⚠️ 住所列を選択してください</option>';
   const opts = excelColumns.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
-  ['colName','colAddr','colNote','colTel','colStatus'].forEach(id => {
+  ['colName','colAddr','colNote','colTel','colStatus','colMaint'].forEach(id => {
     const sel = document.getElementById(id);
-    sel.innerHTML = (id === 'colAddr' ? '' : noneOpt) + opts;
+    sel.innerHTML = (id === 'colAddr' ? addrNoneOpt : noneOpt) + opts;
   });
 
   // Step1: カラム名のキーワードマッチ
@@ -955,6 +1655,7 @@ function setupColumnSelectors() {
   autoSelectByName('colNote',   ['メモ','備考','note','コメント','備考欄']);
   autoSelectByName('colTel',    ['電話','TEL','tel','電話番号','phone']);
   autoSelectByName('colStatus', ['営業ステータス','ステータス','status','STATUS','状態']);
+  autoSelectByName('colMaint',  ['メンテナンス','maint','maintenance','点検日','保守日']);
 
   // Step2: 未マッチの項目はデータの中身で推測
   autoSelectByData();
@@ -1063,6 +1764,28 @@ async function plotBulk() {
         const val = String(c[statusCol]).trim();
         c._salesStatus = SALES_STATUSES[val] ? val : DEFAULT_SALES_STATUS;
       }
+      // メンテナンス日列
+      const maintCol = document.getElementById('colMaint').value;
+      if (maintCol && c[maintCol]) {
+        const raw = c[maintCol];
+        if (typeof raw === 'number') {
+          // Excelシリアル値：1以上（1900-01-01以降）のみ有効
+          if (raw >= 1) {
+            const d = new Date(Math.round((raw - 25569) * 86400 * 1000));
+            const dateStr = d.toISOString().slice(0, 10);
+            // 1950年以降・2100年以前の日付のみ採用
+            if (dateStr >= '1950-01-01' && dateStr <= '2100-12-31') {
+              c._maintDate = dateStr;
+            }
+          }
+        } else {
+          const str = String(raw).trim();
+          // YYYY-MM-DD 形式かチェック
+          if (/^\d{4}-\d{2}-\d{2}$/.test(str) && str >= '1950-01-01' && str <= '2100-12-31') {
+            c._maintDate = str;
+          }
+        }
+      }
       addMarker(c._id, coords.lat, coords.lng);
     } else {
       c._status = 'error';
@@ -1103,11 +1826,149 @@ async function plotBulk() {
 }
 
 // ========== カスタムマーカーアイコン ==========
-function createMarkerIcon(salesStatus) {
+// ========== カスタム日付ピッカー ==========
+let datepickerTargetId = null;
+let datepickerYear = new Date().getFullYear();
+let datepickerMonth = new Date().getMonth();
+
+function openDatePicker(targetId) {
+  datepickerTargetId = targetId;
+  const val = document.getElementById(targetId)?.value;
+  const d = val ? new Date(val + 'T00:00:00') : new Date();
+  datepickerYear = d.getFullYear();
+  datepickerMonth = d.getMonth();
+  renderDatePickerCalendar();
+  const modal = document.getElementById('datepickerModal');
+  document.body.appendChild(modal); // 常にbodyの最末尾へ移動してLeafletより前面に出す
+  modal.classList.add('show');
+}
+function closeDatePicker() {
+  document.getElementById('datepickerModal').classList.remove('show');
+  datepickerTargetId = null;
+}
+function clearDatePicker() {
+  if (!datepickerTargetId) return;
+  const hidden = document.getElementById(datepickerTargetId);
+  const display = document.getElementById(datepickerTargetId + '-display');
+  if (hidden) hidden.value = '';
+  if (display) display.textContent = '日付を選択';
+  closeDatePicker();
+}
+function datepickerPrevMonth() {
+  datepickerMonth--;
+  if (datepickerMonth < 0) { datepickerMonth = 11; datepickerYear--; }
+  renderDatePickerCalendar();
+}
+function datepickerNextMonth() {
+  datepickerMonth++;
+  if (datepickerMonth > 11) { datepickerMonth = 0; datepickerYear++; }
+  renderDatePickerCalendar();
+}
+function renderDatePickerCalendar() {
+  document.getElementById('datepickerTitle').textContent = `${datepickerYear}年 ${datepickerMonth + 1}月`;
+  const grid = document.getElementById('datepickerGrid');
+  const firstDay = new Date(datepickerYear, datepickerMonth, 1).getDay();
+  const daysInMonth = new Date(datepickerYear, datepickerMonth + 1, 0).getDate();
+  const currentVal = datepickerTargetId ? (document.getElementById(datepickerTargetId)?.value || '') : '';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayStr = today.toISOString().slice(0, 10);
+  let html = '';
+  for (let i = 0; i < firstDay; i++) html += '<div></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${datepickerYear}-${String(datepickerMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow = (firstDay + d - 1) % 7;
+    const cls = ['datepicker-day',
+      dateStr === currentVal ? 'dp-selected' : '',
+      dateStr === todayStr ? 'today' : '',
+      dow === 0 ? 'sun' : dow === 6 ? 'sat' : ''
+    ].filter(Boolean).join(' ');
+    html += `<button class="${cls}" onclick="selectDate('${dateStr}')">${d}</button>`;
+  }
+  grid.innerHTML = html;
+}
+function selectDate(dateStr) {
+  if (!datepickerTargetId) return;
+  const hidden = document.getElementById(datepickerTargetId);
+  const display = document.getElementById(datepickerTargetId + '-display');
+  if (hidden) hidden.value = dateStr;
+  if (display) {
+    const d = new Date(dateStr + 'T00:00:00');
+    display.textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  }
+  closeDatePicker();
+}
+
+// ========== メンテナンス ==========
+function getMaintAlertDays() {
+  return parseInt(localStorage.getItem('maintAlertDays') || '30');
+}
+function saveMaintAlertDays(val) {
+  const n = Math.max(1, Math.min(365, parseInt(val) || 30));
+  localStorage.setItem('maintAlertDays', n);
+  document.getElementById('maintAlertDaysInput').value = n;
+  // マーカー再描画
+  customers.forEach(c => {
+    if (markers[c._id]) markers[c._id].setIcon(createMarkerIcon(c._salesStatus, getMaintStatus(c)));
+  });
+  renderCustomerList();
+}
+function getMaintStatus(c) {
+  if (!c._maintDate) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const maint = new Date(c._maintDate);
+  if (isNaN(maint.getTime())) return null;
+  // 異常に古い日付（1950年以前）は無効とみなす
+  if (maint.getFullYear() < 1950) return null;
+  const diffDays = Math.floor((maint - today) / 86400000);
+  if (diffDays < 0) return 'overdue';
+  if (diffDays <= getMaintAlertDays()) return 'soon';
+  return 'ok';
+}
+function showMaintAlerts() {
+  const items = customers
+    .map(c => ({ c, ms: getMaintStatus(c) }))
+    .filter(({ ms }) => ms === 'overdue' || ms === 'soon')
+    .sort((a, b) => new Date(a.c._maintDate) - new Date(b.c._maintDate));
+
+  const listEl = document.getElementById('maintAlertList');
+  if (!items.length) {
+    listEl.innerHTML = '<div style="text-align:center;color:#888;padding:20px">アラート対象の顧客はいません</div>';
+  } else {
+    listEl.innerHTML = items.map(({ c, ms }) => {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const diff = Math.floor((new Date(c._maintDate) - today) / 86400000);
+      const diffLabel = diff < 0 ? `${-diff}日超過` : diff === 0 ? '本日' : `あと${diff}日`;
+      const cls = ms === 'overdue' ? 'maint-alert-overdue' : 'maint-alert-soon';
+      return `<div class="alert-modal-item ${cls}" style="cursor:pointer" onclick="selectFromAlert(${c._id})">
+        <div class="ami-name">${esc(c._name || `顧客${c._id+1}`)}</div>
+        <div class="ami-date">📅 ${c._maintDate}（${diffLabel}）</div>
+        ${c._addr ? `<div class="ami-date">📍 ${esc(c._addr)}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('maintAlertModal').classList.add('show');
+}
+
+function selectFromAlert(id) {
+  document.getElementById('maintAlertModal').classList.remove('show');
+  focusCustomer(id);
+}
+
+function createMarkerIcon(salesStatus, maintStatus) {
   const color = SALES_STATUSES[salesStatus]?.color || '#9e9e9e';
+  const warnSvg = (color) =>
+    `<div style="position:absolute;top:-8px;right:-8px;pointer-events:none;line-height:1;z-index:1">` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="13" viewBox="0 0 24 22">` +
+    `<path d="M12 1L1 21h22L12 1z" fill="${color}" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>` +
+    `<rect x="11" y="9" width="2" height="6" fill="white" rx="1"/>` +
+    `<rect x="11" y="17" width="2" height="2" fill="white" rx="1"/>` +
+    `</svg></div>`;
+  const alert = maintStatus === 'overdue' ? warnSvg('#d93025')
+              : maintStatus === 'soon'    ? warnSvg('#f9ab00')
+              : '';
   return L.divIcon({
     className: '',
-    html: `<div style="width:18px;height:18px;background:${color};border:2.5px solid white;border-radius:50%;box-shadow:0 1px 5px rgba(0,0,0,0.45)"></div>`,
+    html: `<div style="position:relative;width:18px;height:18px"><div style="width:18px;height:18px;background:${color};border:2.5px solid white;border-radius:50%;box-shadow:0 1px 5px rgba(0,0,0,0.45)"></div>${alert}</div>`,
     iconSize: [18, 18],
     iconAnchor: [9, 9],
     popupAnchor: [0, -12]
@@ -1119,8 +1980,8 @@ function addMarker(id, lat, lng) {
   const c = customers.find(x => x._id === id);
   if (!c) return;
 
-  const marker = L.marker([lat, lng], { icon: createMarkerIcon(c._salesStatus) })
-    .bindPopup(buildPopup(c))
+  const marker = L.marker([lat, lng], { icon: createMarkerIcon(c._salesStatus, getMaintStatus(c)) })
+    .bindPopup(buildPopup(c), { autoPan: false })
     .addTo(markerGroup);
 
   marker.on('click', () => {
@@ -1131,17 +1992,103 @@ function addMarker(id, lat, lng) {
   markers[id] = marker;
 }
 
+function buildNaviUrl(c) {
+  if (c._lat != null && c._lng != null) return `https://www.google.com/maps/dir/?api=1&destination=${c._lat},${c._lng}`;
+  if (c._addr) return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(c._addr)}`;
+  return '';
+}
+
 function buildPopup(c) {
   const statusOpts = Object.keys(SALES_STATUSES).map(s =>
     `<option value="${s}" ${c._salesStatus === s ? 'selected' : ''}>${SALES_STATUSES[s].icon} ${s}</option>`
   ).join('');
+  const naviUrl = buildNaviUrl(c);
+  const addrLine = c._addr
+    ? `<div class="popup-row"><span class="pl">住所</span>${esc(c._addr)}</div>`
+    : (c._lat != null ? `<div class="popup-row"><span class="pl">座標</span>${c._lat.toFixed(5)}, ${c._lng.toFixed(5)}</div>` : '');
   return `
-    <div class="popup-name">📍 ${esc(c._name || '')}</div>
-    ${c._addr ? `<div class="popup-row"><span class="pl">住所</span>${esc(c._addr)}</div>` : ''}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div class="popup-name" style="margin:0">📍 ${esc(c._name || '')}</div>
+      <button onclick="event.stopPropagation();openPopupEdit(${c._id})" style="background:none;border:1px solid #ccc;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;font-family:inherit;white-space:nowrap">✏️ 編集</button>
+    </div>
+    ${addrLine}
     ${c._tel  ? `<div class="popup-row"><span class="pl">電話</span>${esc(c._tel)}</div>` : ''}
     ${c._note ? `<div class="popup-row"><span class="pl">メモ</span>${esc(c._note)}</div>` : ''}
+    ${c._maintDate ? (() => { const ms = getMaintStatus(c); const today = new Date(); today.setHours(0,0,0,0); const diff = Math.floor((new Date(c._maintDate) - today) / 86400000); const diffLabel = diff < 0 ? `${-diff}日超過` : diff === 0 ? '本日' : `あと${diff}日`; const badgeCls = ms === 'overdue' ? 'maint-badge-overdue' : ms === 'soon' ? 'maint-badge-soon' : 'maint-badge-ok'; return `<div class="popup-row"><span class="pl">🔧</span>${c._maintDate} <span class="maint-badge ${badgeCls}">${diffLabel}</span></div>`; })() : ''}
     <select class="popup-status-select" onchange="setSalesStatus(${c._id}, this.value)">${statusOpts}</select>
+    ${naviUrl ? `<a href="${naviUrl}" target="_blank" rel="noopener" class="popup-navi-btn">🗺️ Googleマップでナビ</a>` : ''}
   `;
+}
+
+function buildPopupEdit(c) {
+  const statusOpts = Object.keys(SALES_STATUSES).map(s =>
+    `<option value="${s}" ${c._salesStatus === s ? 'selected' : ''}>${SALES_STATUSES[s].icon} ${s}</option>`
+  ).join('');
+  const maintDisplay = c._maintDate ? (() => {
+    const d = new Date(c._maintDate + 'T00:00:00');
+    return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  })() : '日付を選択';
+  return `
+    <div class="map-popup-form" style="width:220px">
+      <b style="font-size:13px">✏️ 顧客情報を編集</b>
+      <div style="margin-top:6px">
+        <span class="popup-label">顧客名</span>
+        <input id="pedit-name" value="${esc(c._name || '')}">
+        <span class="popup-label">住所</span>
+        <input id="pedit-addr" value="${esc(c._addr || '')}">
+        <span class="popup-label">電話番号</span>
+        <input id="pedit-tel" value="${esc(c._tel || '')}">
+        <span class="popup-label">メンテナンス予定日</span>
+        <button type="button" class="datepicker-display" id="pedit-maint-display" onclick="openDatePicker('pedit-maint')" style="font-size:12px;min-height:32px;padding:6px 10px">${maintDisplay}</button>
+        <input type="hidden" id="pedit-maint" value="${c._maintDate || ''}">
+        <span class="popup-label">メモ</span>
+        <textarea id="pedit-note">${esc(c._note || '')}</textarea>
+        <span class="popup-label">営業ステータス</span>
+        <select id="pedit-status">${statusOpts}</select>
+      </div>
+      <div class="popup-actions" style="margin-top:8px">
+        <button class="popup-add-btn" onclick="event.stopPropagation();savePopupEdit(${c._id})">💾 保存</button>
+        <button class="popup-cancel-btn" onclick="event.stopPropagation();cancelPopupEdit(${c._id})">キャンセル</button>
+      </div>
+    </div>`;
+}
+
+function openPopupEdit(id) {
+  const c = customers.find(x => x._id === id);
+  if (!c || !markers[id]) return;
+  // 編集時はautoPanを有効にして全体が見えるよう自動調整
+  markers[id].unbindPopup();
+  markers[id].bindPopup(buildPopupEdit(c), { autoPan: true, autoPanPaddingTopLeft: [10, 60], autoPanPaddingBottomRight: [10, 10] });
+  markers[id].openPopup();
+}
+
+function savePopupEdit(id) {
+  const c = customers.find(x => x._id === id);
+  if (!c) return;
+  c._name      = document.getElementById('pedit-name')?.value.trim() || c._name;
+  c._addr      = document.getElementById('pedit-addr')?.value.trim();
+  c._tel       = document.getElementById('pedit-tel')?.value.trim();
+  c._note      = document.getElementById('pedit-note')?.value.trim();
+  c._maintDate = document.getElementById('pedit-maint')?.value || '';
+  c._salesStatus = document.getElementById('pedit-status')?.value || c._salesStatus;
+  if (markers[id]) {
+    markers[id].setIcon(createMarkerIcon(c._salesStatus, getMaintStatus(c)));
+    markers[id].unbindPopup();
+    markers[id].bindPopup(buildPopup(c), { autoPan: false });
+    markers[id].openPopup();
+  }
+  renderCustomerList();
+  updateStats();
+  saveData(customers);
+  showToast('✅ 顧客情報を更新しました');
+}
+
+function cancelPopupEdit(id) {
+  const c = customers.find(x => x._id === id);
+  if (!c || !markers[id]) return;
+  markers[id].unbindPopup();
+  markers[id].bindPopup(buildPopup(c), { autoPan: false });
+  markers[id].openPopup();
 }
 
 // ========== 営業ステータス変更 ==========
@@ -1152,7 +2099,7 @@ function setSalesStatus(id, status) {
   // マーカーの色を更新
   const m = markers[id];
   if (m) {
-    m.setIcon(createMarkerIcon(status));
+    m.setIcon(createMarkerIcon(status, getMaintStatus(c)));
     m.setPopupContent(buildPopup(c));
   }
   renderCustomerList();
@@ -1162,22 +2109,42 @@ function setSalesStatus(id, status) {
 }
 
 // ========== 顧客リスト描画 ==========
+let maintFilterVal = ''; // 'overdue' | 'soon' | ''
+
+function toggleMaintFilter(type) {
+  maintFilterVal = (maintFilterVal === type) ? '' : type;
+  document.getElementById('maintFilterOverdue')?.classList.toggle('active', maintFilterVal === 'overdue');
+  document.getElementById('maintFilterSoon')?.classList.toggle('active', maintFilterVal === 'soon');
+  document.getElementById('mobileMaintFilterOverdue')?.classList.toggle('active', maintFilterVal === 'overdue');
+  document.getElementById('mobileMaintFilterSoon')?.classList.toggle('active', maintFilterVal === 'soon');
+  renderCustomerList();
+}
+
 function renderCustomerList() {
-  const list = document.getElementById('customerList');
-  const filterVal = document.getElementById('filterSelect').value;
+  const isMobile = window.innerWidth <= 768;
+  const filterVal = isMobile
+    ? (document.getElementById('mobileFilterSelect')?.value || '')
+    : (document.getElementById('filterSelect')?.value || '');
+  const searchVal = (
+    (isMobile ? document.getElementById('mobileSearchInput')?.value : document.getElementById('searchInput')?.value) || ''
+  ).trim().toLowerCase();
 
-  const visible = customers.filter(c => !filterVal || c._salesStatus === filterVal);
+  const visible = customers.filter(c => {
+    if (filterVal && c._salesStatus !== filterVal) return false;
+    if (maintFilterVal && getMaintStatus(c) !== maintFilterVal) return false;
+    if (searchVal) {
+      const name = (c._name || '').toLowerCase();
+      const addr = (c._addr || '').toLowerCase();
+      if (!name.includes(searchVal) && !addr.includes(searchVal)) return false;
+    }
+    return true;
+  });
 
-  if (!customers.length) {
-    list.innerHTML = '<div class="empty-hint">顧客を追加するとここに一覧が表示されます</div>';
-    return;
-  }
-  if (!visible.length) {
-    list.innerHTML = '<div class="empty-hint">該当する顧客がいません</div>';
-    return;
-  }
+  const emptyHtml = !customers.length
+    ? '<div class="empty-hint">顧客を追加するとここに一覧が表示されます</div>'
+    : '<div class="empty-hint">該当する顧客がいません</div>';
 
-  list.innerHTML = visible.map(c => {
+  const itemsHtml = visible.length ? visible.map(c => {
     const geoHtml =
       c._status === 'ok'      ? '' :
       c._status === 'error'   ? '<div class="ci-status ci-err">❌ 住所不明</div>' :
@@ -1185,15 +2152,99 @@ function renderCustomerList() {
     const ss = c._salesStatus || DEFAULT_SALES_STATUS;
     const color = SALES_STATUSES[ss]?.color || '#9e9e9e';
     const salesBadge = `<span class="sales-badge" style="background:${color}">${SALES_STATUSES[ss]?.icon || ''} ${ss}</span>`;
-    return `<div class="customer-item" id="ci-${c._id}" onclick="focusCustomer(${c._id})">
+    const naviUrl = buildNaviUrl(c);
+    const addrText = c._addr || (c._lat != null ? `📌 ${c._lat.toFixed(4)}, ${c._lng.toFixed(4)}` : '');
+    const ms = getMaintStatus(c);
+    const maintHighlight = ms === 'overdue' ? ' maint-alert-overdue' : ms === 'soon' ? ' maint-alert-soon' : '';
+    const maintBadge = c._maintDate ? (() => {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const diff = Math.floor((new Date(c._maintDate) - today) / 86400000);
+      const diffLabel = diff < 0 ? `${-diff}日超過` : diff === 0 ? '本日' : `あと${diff}日`;
+      const bc = ms === 'overdue' ? 'maint-badge-overdue' : ms === 'soon' ? 'maint-badge-soon' : 'maint-badge-ok';
+      return `<span class="maint-badge ${bc}">🔧 ${diffLabel}</span>`;
+    })() : '';
+    return `<div class="customer-item${maintHighlight}" id="ci-${c._id}" onclick="focusCustomer(${c._id})">
       <div class="ci-body">
         <div class="ci-name">${esc(c._name || `顧客${c._id+1}`)}</div>
-        <div class="ci-addr">${esc(c._addr || '')}</div>
-        ${salesBadge}${geoHtml}
+        <div class="ci-addr">${esc(addrText)}</div>
+        ${salesBadge}${maintBadge}${geoHtml}
       </div>
-      <button class="ci-del" onclick="event.stopPropagation();deleteCustomer(${c._id})" title="削除">×</button>
+      <div class="ci-actions">
+        ${naviUrl ? `<a href="${naviUrl}" target="_blank" rel="noopener" class="ci-navi-btn" onclick="event.stopPropagation()">ナビ</a>` : ''}
+        <button class="ci-del" onclick="event.stopPropagation();deleteCustomer(${c._id})" title="削除">×</button>
+      </div>
     </div>`;
-  }).join('');
+  }).join('') : emptyHtml;
+
+  const pcList = document.getElementById('customerList');
+  const mobileList = document.getElementById('mobileCustomerList');
+  const routeTargetList = document.getElementById('routeTargetList');
+  if (pcList) pcList.innerHTML = itemsHtml;
+  if (mobileList) mobileList.innerHTML = itemsHtml;
+  if (routeTargetList) routeTargetList.innerHTML = itemsHtml;
+
+  // 検索・フィルターに合わせてマップのピンを表示/非表示
+  const visibleIds = new Set(visible.map(c => c._id));
+  customers.forEach(c => {
+    const m = markers[c._id];
+    if (!m) return;
+    if (visibleIds.has(c._id)) {
+      if (!markerGroup.hasLayer(m)) markerGroup.addLayer(m);
+    } else {
+      markerGroup.removeLayer(m);
+    }
+  });
+}
+
+// ========== 現在地 ==========
+function goToMyLocation() {
+  if (!navigator.geolocation) { showToast('⚠️ 位置情報が使えません'); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    map.setView([lat, lng], 15, { animate: true });
+    L.circleMarker([lat, lng], {
+      radius: 10, color: '#1a73e8', fillColor: '#1a73e8',
+      fillOpacity: 0.4, weight: 3
+    }).addTo(map).bindPopup('現在地').openPopup();
+  }, () => showToast('❌ 位置情報の取得に失敗しました。\nブラウザ・デバイスの位置情報を許可してください'));
+}
+
+// ========== 右パネルタブ ==========
+function switchRightTab(tab) {
+  document.querySelectorAll('.right-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.right-tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`rtab-${tab}`)?.classList.add('active');
+  document.getElementById(`rpanel-${tab}`)?.classList.add('active');
+}
+
+// ========== パネル折りたたみ ==========
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const btn = document.getElementById('sidebarToggle');
+  const collapsed = sidebar.classList.toggle('collapsed');
+  btn.classList.toggle('collapsed', collapsed);
+  btn.textContent = collapsed ? '▶' : '◀';
+  setTimeout(() => map.invalidateSize(), 260);
+}
+
+function toggleRightPanel() {
+  const panel = document.querySelector('.right-panel');
+  const btn = document.getElementById('rightToggle');
+  const collapsed = panel.classList.toggle('collapsed');
+  btn.classList.toggle('collapsed', collapsed);
+  btn.textContent = collapsed ? '◀' : '▶';
+  setTimeout(() => map.invalidateSize(), 260);
+}
+
+// ========== モバイルタブ切り替え ==========
+function switchMobileTab(tab) {
+  document.querySelectorAll('.mobile-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.mobile-tab-bar button').forEach(b => b.classList.remove('active'));
+  if (tab !== 'map') {
+    document.getElementById(`mobile-panel-${tab}`)?.classList.add('active');
+  }
+  document.getElementById(`mtab-${tab}`)?.classList.add('active');
+  if (tab === 'map') map.invalidateSize();
 }
 
 // ========== フォーカス ==========
@@ -1201,7 +2252,12 @@ function focusCustomer(id) {
   document.querySelectorAll('.customer-item').forEach(el => el.classList.remove('active'));
   document.getElementById(`ci-${id}`)?.classList.add('active');
   const m = markers[id];
-  if (m) { map.setView(m.getLatLng(), 15, { animate: true }); m.openPopup(); }
+  if (m) {
+    // モバイルの場合は地図タブに切り替えてからフォーカス
+    if (window.innerWidth <= 768) switchMobileTab('map');
+    map.setView(m.getLatLng(), 15, { animate: true });
+    m.openPopup();
+  }
 }
 
 // ========== 削除 ==========
@@ -1214,7 +2270,11 @@ function deleteCustomer(id) {
 }
 
 // ========== クリア ==========
+let lastDeletedCustomers = null;
+
 function clearAll() {
+  if (!customers.length) return;
+  lastDeletedCustomers = JSON.parse(JSON.stringify(customers));
   markerGroup.clearLayers();
   markers = {};
   customers = [];
@@ -1227,27 +2287,49 @@ function clearAll() {
   updateStats();
   saveData(customers);
   map.setView([36.2, 138.0], 5);
+  showToastWithUndo(`🗑 ${lastDeletedCustomers.length}件を削除しました`);
+}
+
+function undoClearAll() {
+  if (!lastDeletedCustomers) return;
+  clearInterval(toastCountdownInterval);
+  clearTimeout(toastTimer);
+  document.getElementById('toast').classList.remove('show');
+  restoreCustomers(lastDeletedCustomers);
+  lastDeletedCustomers = null;
+  showToast('↩️ 元に戻しました');
 }
 
 // ========== 統計 ==========
 function updateStats() {
   const total = customers.length;
   const bar = document.getElementById('statBar');
+  const mBar = document.getElementById('mobileStatBar');
   bar.style.display = total ? 'flex' : 'none';
+  if (mBar) mBar.style.display = total ? 'flex' : 'none';
   if (!total) return;
 
   const counts = {};
   Object.keys(SALES_STATUSES).forEach(s => counts[s] = 0);
   customers.forEach(c => { if (counts[c._salesStatus] !== undefined) counts[c._salesStatus]++; });
 
-  bar.innerHTML = `<span style="color:#555">📋 ${total}件</span>` +
+  const statsHtml = `<span style="color:#555">📋 ${total}件</span>` +
     Object.entries(counts).map(([s, n]) =>
       `<span style="color:${SALES_STATUSES[s].color};font-weight:600">${SALES_STATUSES[s].icon}${n}</span>`
     ).join('');
+  bar.innerHTML = statsHtml;
+  if (mBar) mBar.innerHTML = statsHtml;
 }
 
 // ========== ジオコーディング ==========
+// 住所らしい文字列かを簡易チェック
+function looksLikeAddress(str) {
+  if (!str || str.length < 4) return false;
+  return /[都道府県市区町村]/.test(str) || /[0-9０-９一二三四五六七八九十百千]+(丁目|番地?|号)/.test(str);
+}
+
 async function geocode(address, signal) {
+  if (!looksLikeAddress(address)) return null;
   try {
     // 国土地理院 住所検索API（日本特化・無料・APIキー不要）
     const url = `https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(address)}`;
@@ -1269,11 +2351,33 @@ function interruptibleSleep(ms) {
 }
 
 // ========== トースト ==========
+let toastTimer = null;
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
+  t.innerHTML = `<span>${msg}</span>`;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 10000);
+}
+let toastCountdownInterval = null;
+function showToastWithUndo(msg) {
+  const t = document.getElementById('toast');
+  const SECS = 30;
+  t.innerHTML = `<span>${msg}</span><button class="toast-undo-btn" id="undoBtn" onclick="undoClearAll()">元に戻す (${SECS})</button>`;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  clearInterval(toastCountdownInterval);
+  let remaining = SECS;
+  toastCountdownInterval = setInterval(() => {
+    remaining--;
+    const btn = document.getElementById('undoBtn');
+    if (btn) btn.textContent = `元に戻す (${remaining})`;
+    if (remaining <= 0) {
+      clearInterval(toastCountdownInterval);
+      t.classList.remove('show');
+    }
+  }, 1000);
+  toastTimer = setTimeout(() => t.classList.remove('show'), SECS * 1000);
 }
 
 // ========== ユーティリティ ==========
@@ -1295,7 +2399,7 @@ function togglePinMode() {
   const mapEl = document.getElementById('map');
   btn.classList.toggle('active', pinMode);
   mapEl.classList.toggle('pin-mode', pinMode);
-  btn.textContent = pinMode ? '✅ ピン打ちモード ON（クリックで追加）' : '📍 ピン打ちモード';
+  btn.textContent = pinMode ? '🔴 ピン打ち中… クリックで追加 / もう一度押すとOFF' : '📍 ピン打ちモード';
   if (!pinMode && pinPopup) { map.closePopup(pinPopup); pinPopup = null; }
 }
 
@@ -1314,6 +2418,7 @@ map.on('click', async function(e) {
     addr = data?.results?.lv01Nm || '';
   } catch {}
 
+  const coordLabel = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   const statusOpts = Object.entries(SALES_STATUSES)
     .map(([s, d]) => `<option value="${s}">${d.icon} ${s}</option>`).join('');
 
@@ -1322,12 +2427,17 @@ map.on('click', async function(e) {
     <div class="map-popup-form" style="width:220px">
       <b style="font-size:13px">📍 新規顧客を追加</b>
       <div style="margin-top:8px">
+        <span class="popup-label">座標</span>
+        <input id="${formId}-coord" value="${coordLabel}" readonly style="background:#f5f5f5;color:#555;font-size:11px">
         <span class="popup-label">顧客名</span>
         <input id="${formId}-name" placeholder="山田太郎">
-        <span class="popup-label">住所</span>
-        <input id="${formId}-addr" value="${addr}">
+        <span class="popup-label">住所 <span style="font-weight:400;color:#aaa;font-size:10px">（なければ空欄でOK）</span></span>
+        <input id="${formId}-addr" value="${addr}" placeholder="空欄でも座標でナビできます">
         <span class="popup-label">電話番号</span>
         <input id="${formId}-tel" placeholder="090-0000-0000">
+        <span class="popup-label">メンテナンス予定日</span>
+        <button type="button" class="datepicker-display" id="${formId}-maint-display" onclick="openDatePicker('${formId}-maint')" style="display:block">日付を選択</button>
+        <input type="hidden" id="${formId}-maint">
         <span class="popup-label">メモ</span>
         <textarea id="${formId}-note" placeholder="備考..."></textarea>
         <span class="popup-label">営業ステータス</span>
@@ -1346,17 +2456,18 @@ map.on('click', async function(e) {
 });
 
 function addPinFromMap(formId, lat, lng) {
-  const name   = document.getElementById(`${formId}-name`)?.value.trim();
-  const addr   = document.getElementById(`${formId}-addr`)?.value.trim();
-  const tel    = document.getElementById(`${formId}-tel`)?.value.trim();
-  const note   = document.getElementById(`${formId}-note`)?.value.trim();
-  const status = document.getElementById(`${formId}-status`)?.value || DEFAULT_SALES_STATUS;
+  const name     = document.getElementById(`${formId}-name`)?.value.trim();
+  const addr     = document.getElementById(`${formId}-addr`)?.value.trim();
+  const tel      = document.getElementById(`${formId}-tel`)?.value.trim();
+  const note     = document.getElementById(`${formId}-note`)?.value.trim();
+  const maint    = document.getElementById(`${formId}-maint`)?.value || '';
+  const status   = document.getElementById(`${formId}-status`)?.value || DEFAULT_SALES_STATUS;
 
   const id = idCounter++;
   const entry = {
     _id: id, _manual: true,
     _name: name || `顧客${id+1}`,
-    _addr: addr, _tel: tel, _note: note,
+    _addr: addr, _tel: tel, _note: note, _maintDate: maint,
     _status: 'ok', _salesStatus: status,
     _lat: lat, _lng: lng
   };
@@ -1370,14 +2481,234 @@ function addPinFromMap(formId, lat, lng) {
   showToast('✅ ピンを追加しました');
 }
 
+// ========== 巡回ルート ==========
+let routeOriginLatLng = null;
+let routeOrder = [];
+let routeCalcOrigin = null; // 計算時のorigin（並び替え・削除後も使いまわす）
+
+function toggleRoutePanel() {
+  const body = document.getElementById('routeBody');
+  const icon = document.getElementById('routeToggleIcon');
+  const open = body.classList.toggle('open');
+  icon.textContent = open ? '▼' : '▶';
+}
+
+function useCurrentLocation() {
+  if (!navigator.geolocation) { showToast('⚠️ 位置情報が使えません'); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    routeOriginLatLng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    document.getElementById('routeOriginAddr').value = `現在地 (${routeOriginLatLng.lat.toFixed(4)}, ${routeOriginLatLng.lng.toFixed(4)})`;
+    showToast('📍 現在地を取得しました');
+  }, () => showToast('❌ 位置情報の取得に失敗しました。\nブラウザ・デバイスの位置情報を許可してください'));
+}
+
+function calcRoute() {
+  // 現在の検索・ステータスフィルターで絞り込まれた顧客を対象にする
+  const isMobile = window.innerWidth <= 768;
+  const filterVal = isMobile
+    ? (document.getElementById('mobileFilterSelect')?.value || '')
+    : (document.getElementById('filterSelect')?.value || '');
+  const searchVal = (
+    (isMobile ? document.getElementById('mobileSearchInput')?.value : document.getElementById('searchInput')?.value) || ''
+  ).trim().toLowerCase();
+
+  const targets = customers.filter(c => {
+    if (c._lat == null || c._lng == null) return false;
+    if (filterVal && c._salesStatus !== filterVal) return false;
+    if (maintFilterVal && getMaintStatus(c) !== maintFilterVal) return false;
+    if (searchVal) {
+      const name = (c._name || '').toLowerCase();
+      const addr = (c._addr || '').toLowerCase();
+      if (!name.includes(searchVal) && !addr.includes(searchVal)) return false;
+    }
+    return true;
+  });
+  if (!targets.length) { showToast('⚠️ 対象顧客がいません（座標が必要です）'); return; }
+
+  // 出発地の決定
+  let origin = routeOriginLatLng;
+  if (!origin) {
+    const addrInput = document.getElementById('routeOriginAddr').value.trim();
+    if (!addrInput) {
+      // 出発地未設定の場合は顧客の重心から開始
+      const avgLat = targets.reduce((s, c) => s + c._lat, 0) / targets.length;
+      const avgLng = targets.reduce((s, c) => s + c._lng, 0) / targets.length;
+      origin = { lat: avgLat, lng: avgLng };
+    } else {
+      showToast('⚠️ 住所入力の場合は「現在地」ボタンをご使用ください（住所→座標変換は未対応）');
+      return;
+    }
+  }
+
+  // 最近傍法
+  const unvisited = [...targets];
+  const ordered = [];
+  let cur = origin;
+  while (unvisited.length) {
+    let minDist = Infinity, minIdx = 0;
+    unvisited.forEach((c, i) => {
+      const d = Math.pow(c._lat - cur.lat, 2) + Math.pow(c._lng - cur.lng, 2);
+      if (d < minDist) { minDist = d; minIdx = i; }
+    });
+    const next = unvisited.splice(minIdx, 1)[0];
+    ordered.push(next);
+    cur = { lat: next._lat, lng: next._lng };
+  }
+
+  routeOrder = ordered;
+  routeCalcOrigin = origin;
+  renderRouteList(ordered, origin);
+  document.getElementById('routeResult').classList.add('show');
+  showToast(`✅ ${ordered.length}件の巡回順を計算しました`);
+}
+
+function renderRouteList(ordered, origin) {
+  const effectiveOrigin = origin || routeCalcOrigin || routeOriginLatLng;
+  applyRouteToMap(ordered, effectiveOrigin);
+  updateRouteNaviUrl(ordered, effectiveOrigin);
+
+  document.getElementById('routeResultText').innerHTML =
+    `<b>${ordered.length}件</b>の巡回順　<span style="color:#888;font-weight:400">（ドラッグで順番を変更）</span>${ordered.length > 10 ? `<br><span style="color:#d93025;font-weight:700">※ Googleマップナビは10件まで対応</span>` : ''}`;
+
+  const ul = document.getElementById('routeList');
+  ul.innerHTML = '';
+  ordered.forEach((c, idx) => {
+    const color = SALES_STATUSES[c._salesStatus || DEFAULT_SALES_STATUS]?.color || '#9e9e9e';
+    const li = document.createElement('li');
+    li.className = 'route-list-item';
+    li.draggable = true;
+    li.dataset.id = c._id;
+    li.innerHTML = `
+      <span class="route-drag-handle">⠿</span>
+      <span class="route-num" style="background:${color}">${idx + 1}</span>
+      <div style="flex:1;min-width:0">
+        <div class="route-item-name">${esc(c._name || `顧客${c._id+1}`)}</div>
+        <div class="route-item-addr">${esc(c._addr || '')}</div>
+      </div>
+      <button onclick="removeFromRoute(${c._id})" style="background:none;border:none;color:#ccc;font-size:15px;cursor:pointer;padding:0 2px;flex-shrink:0" title="ルートから削除">×</button>`;
+
+    li.addEventListener('dragstart', e => {
+      li.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', c._id);
+    });
+    li.addEventListener('dragend', () => li.classList.remove('dragging'));
+    li.addEventListener('dragover', e => { e.preventDefault(); li.classList.add('drag-over'); });
+    li.addEventListener('dragleave', () => li.classList.remove('drag-over'));
+    li.addEventListener('drop', e => {
+      e.preventDefault();
+      li.classList.remove('drag-over');
+      const fromId = parseInt(e.dataTransfer.getData('text/plain'));
+      const toId = c._id;
+      if (fromId === toId) return;
+      const fromIdx = routeOrder.findIndex(x => x._id === fromId);
+      const toIdx = routeOrder.findIndex(x => x._id === toId);
+      const [moved] = routeOrder.splice(fromIdx, 1);
+      routeOrder.splice(toIdx, 0, moved);
+      renderRouteList(routeOrder, null);
+    });
+    ul.appendChild(li);
+  });
+
+  // ドラッグ中の自動スクロール
+  let scrollInterval = null;
+  ul.addEventListener('dragover', e => {
+    const rect = ul.getBoundingClientRect();
+    const ZONE = 40;
+    clearInterval(scrollInterval);
+    if (e.clientY < rect.top + ZONE) {
+      scrollInterval = setInterval(() => ul.scrollBy(0, -6), 30);
+    } else if (e.clientY > rect.bottom - ZONE) {
+      scrollInterval = setInterval(() => ul.scrollBy(0, 6), 30);
+    }
+  });
+  ul.addEventListener('dragleave', () => clearInterval(scrollInterval));
+  ul.addEventListener('drop', () => clearInterval(scrollInterval));
+}
+
+function updateRouteNaviUrl(ordered, origin) {
+  if (!origin) return;
+  const MAX_WP = 9;
+  const dest = ordered[ordered.length - 1];
+  const waypoints = ordered.slice(0, -1).slice(0, MAX_WP);
+  const wpStr = waypoints.map(c => `${c._lat},${c._lng}`).join('|');
+  document.getElementById('routeNaviBtn').href =
+    `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${dest._lat},${dest._lng}${wpStr ? `&waypoints=${wpStr}` : ''}`;
+}
+
+function applyRouteToMap(ordered, origin) {
+  // 全マーカーを番号付きに更新
+  Object.keys(markers).forEach(id => {
+    const idx = ordered.findIndex(c => c._id === parseInt(id));
+    const c = customers.find(x => x._id === parseInt(id));
+    if (!c) return;
+    const color = SALES_STATUSES[c._salesStatus || DEFAULT_SALES_STATUS]?.color || '#9e9e9e';
+    if (idx >= 0) {
+      markers[id].setIcon(L.divIcon({
+        className: '',
+        html: `<div class="numbered-pin" style="background:${color}">${idx + 1}</div>`,
+        iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -12]
+      }));
+    } else {
+      markers[id].setIcon(createMarkerIcon(c._salesStatus || DEFAULT_SALES_STATUS));
+    }
+  });
+}
+
+function removeFromRoute(id) {
+  routeOrder = routeOrder.filter(c => c._id !== id);
+  const m = markers[id];
+  const c = customers.find(x => x._id === id);
+  if (m && c) m.setIcon(createMarkerIcon(c._salesStatus || DEFAULT_SALES_STATUS, getMaintStatus(c)));
+  if (routeOrder.length === 0) {
+    clearRoute();
+  } else {
+    renderRouteList(routeOrder, null);
+  }
+}
+
+function clearRoute() {
+  routeOrder = [];
+  routeOriginLatLng = null;
+  routeCalcOrigin = null;
+  document.getElementById('routeOriginAddr').value = '';
+  document.getElementById('routeResult').classList.remove('show');
+  // マーカーを通常に戻す
+  customers.forEach(c => {
+    if (markers[c._id]) markers[c._id].setIcon(createMarkerIcon(c._salesStatus || DEFAULT_SALES_STATUS));
+  });
+  showToast('🔄 ルートをクリアしました');
+}
+
 // ========== エクスポート / インポート ==========
-function exportData() {
+function exportData(format = 'json') {
   if (!customers.length) { showToast('⚠️ データがありません'); return; }
+  const date = new Date().toISOString().slice(0, 10);
+
+  if (format === 'xlsx') {
+    const rows = customers.map(c => ({
+      '顧客名':         c._name  || '',
+      '住所':           c._addr  || '',
+      '電話番号':       c._tel   || '',
+      '営業ステータス': c._salesStatus || '',
+      'メモ':           c._note  || '',
+      '緯度':           c._lat   != null ? c._lat : '',
+      '経度':           c._lng   != null ? c._lng : '',
+      'ジオコード状態': c._status || '',
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '顧客リスト');
+    XLSX.writeFile(wb, `customermap_${date}.xlsx`);
+    showToast('📊 Excelファイルを保存しました');
+    return;
+  }
+
   const json = JSON.stringify(customers, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `customermap_${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `customermap_${date}.json`;
   a.click();
 }
 
@@ -1418,12 +2749,47 @@ async function restoreCustomers(data) {
 }
 
 (async () => {
+  // 設定の復元
+  const savedDays = localStorage.getItem('maintAlertDays');
+  if (savedDays) document.getElementById('maintAlertDaysInput').value = savedDays;
+
   const saved = await loadData();
   if (saved.length) {
     await restoreCustomers(saved);
     showToast(`💾 ${saved.length}件のデータを復元しました`);
+    // メンテナンスアラートチェック
+    const alertItems = saved.filter(c => { const ms = getMaintStatus(c); return ms === 'overdue' || ms === 'soon'; });
+    if (alertItems.length) setTimeout(() => showMaintAlerts(), 800);
   }
 })();
 </script>
+
+<!-- カスタム日付ピッカー -->
+<div id="datepickerModal" class="datepicker-overlay" onclick="if(event.target===this)closeDatePicker()">
+  <div class="datepicker-modal">
+    <div class="datepicker-header">
+      <button class="datepicker-nav" onclick="datepickerPrevMonth()">◀</button>
+      <span id="datepickerTitle"></span>
+      <button class="datepicker-nav" onclick="datepickerNextMonth()">▶</button>
+    </div>
+    <div class="datepicker-weekdays">
+      <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+    </div>
+    <div class="datepicker-grid" id="datepickerGrid"></div>
+    <div class="datepicker-actions">
+      <button onclick="clearDatePicker()">クリア</button>
+      <button class="dp-close" onclick="closeDatePicker()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- メンテナンスアラートモーダル -->
+<div id="maintAlertModal" class="alert-modal-overlay">
+  <div class="alert-modal">
+    <h2>🔔 メンテナンスアラート</h2>
+    <div class="alert-modal-list" id="maintAlertList"></div>
+    <button class="alert-modal-close" onclick="document.getElementById('maintAlertModal').classList.remove('show')">閉じる</button>
+  </div>
+</div>
 </body>
 </html>
