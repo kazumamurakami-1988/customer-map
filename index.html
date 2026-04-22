@@ -8,6 +8,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -929,10 +930,35 @@
 </head>
 <body>
 
+<!-- ログイン画面 -->
+<div id="loginOverlay" style="display:none;position:fixed;inset:0;background:#f0f2f5;z-index:99999;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;padding:40px;width:360px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,0.15)">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:40px;margin-bottom:8px">📍</div>
+      <h1 style="font-size:22px;font-weight:700;color:#1a73e8;margin:0">顧客マップ</h1>
+      <p style="font-size:13px;color:#888;margin:4px 0 0">FORLIFE</p>
+    </div>
+    <div id="loginError" style="display:none;background:#fce8e6;color:#d93025;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:14px;text-align:center"></div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:12px;font-weight:700;color:#555;margin-bottom:5px">メールアドレス</label>
+      <input id="loginEmail" type="email" placeholder="例：tanaka@forlife.com" style="width:100%;padding:11px 13px;border:1px solid #ccc;border-radius:8px;font-size:14px;box-sizing:border-box;font-family:inherit;outline:none" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='#ccc'">
+    </div>
+    <div style="margin-bottom:22px">
+      <label style="display:block;font-size:12px;font-weight:700;color:#555;margin-bottom:5px">パスワード</label>
+      <input id="loginPassword" type="password" placeholder="パスワード" style="width:100%;padding:11px 13px;border:1px solid #ccc;border-radius:8px;font-size:14px;box-sizing:border-box;font-family:inherit;outline:none" onfocus="this.style.borderColor='#1a73e8'" onblur="this.style.borderColor='#ccc'">
+    </div>
+    <button id="loginBtn" onclick="handleLogin()" style="width:100%;padding:13px;background:#1a73e8;color:white;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">ログイン</button>
+  </div>
+</div>
+
 <header>
   <span>📍</span>
   <h1>顧客マップ</h1>
   <span class="badge">OpenStreetMap</span>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0">
+    <span id="userEmail" style="font-size:12px;opacity:0.75;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+    <button onclick="handleSignOut()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:white;border-radius:16px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">ログアウト</button>
+  </div>
 </header>
 
 <div class="main">
@@ -1270,15 +1296,69 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ========== DB層（ここだけ差し替えればSupabase等に移行可能） ==========
-async function saveData(data) {
-  localStorage.setItem('customermap_v1', JSON.stringify(data));
+// ========== DB層（Supabase） ==========
+const SUPABASE_URL = 'https://areppaegqiyfuugbvurb.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_t8Zpv4Y2lWnKMU7ZH0NeBA_qyLKkdBa';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+
+function toDbRecord(c) {
+  return {
+    ...(c._dbId ? { id: c._dbId } : {}),
+    name: c._name || '',
+    address: c._addr || '',
+    lat: c._lat ?? null,
+    lng: c._lng ?? null,
+    tel: c._tel || '',
+    note: c._note || '',
+    status: c._salesStatus || DEFAULT_SALES_STATUS,
+    maint_date: c._maintDate || null,
+  };
 }
+
+function fromDbRecord(row, localId) {
+  return {
+    _id: localId,
+    _dbId: row.id,
+    _manual: true,
+    _name: row.name || '',
+    _addr: row.address || '',
+    _tel: row.tel || '',
+    _note: row.note || '',
+    _maintDate: row.maint_date || '',
+    _status: (row.lat != null) ? 'ok' : 'error',
+    _salesStatus: row.status || DEFAULT_SALES_STATUS,
+    _lat: row.lat,
+    _lng: row.lng,
+  };
+}
+
 async function loadData() {
-  try {
-    return JSON.parse(localStorage.getItem('customermap_v1') || '[]');
-  } catch { return []; }
+  const { data, error } = await sb.from('customers').select('*').order('created_at');
+  if (error) { console.error(error); return []; }
+  return (data || []).map((row, i) => fromDbRecord(row, i));
 }
+
+async function saveCustomer(c) {
+  const record = toDbRecord(c);
+  const { data, error } = await sb.from('customers').upsert(record, { onConflict: 'address' }).select().single();
+  if (error) { console.error(error); return null; }
+  return data;
+}
+
+async function removeCustomer(c) {
+  if (!c?._dbId) return;
+  const { error } = await sb.from('customers').delete().eq('id', c._dbId);
+  if (error) console.error(error);
+}
+
+async function clearAllFromDb() {
+  const { error } = await sb.from('customers').delete().not('id', 'is', null);
+  if (error) console.error(error);
+}
+
+async function saveData() {} // Supabase版では個別操作で保存するため不使用
 
 // ========== マップ初期化 ==========
 const map = L.map('map').setView([36.2, 138.0], 5);
@@ -1474,7 +1554,8 @@ async function addManual() {
 
   renderCustomerList();
   updateStats();
-  saveData(customers);
+  const saved = await saveCustomer(entry);
+  if (saved) entry._dbId = saved.id;
 }
 
 // ========== モバイル手動入力 ==========
@@ -1519,7 +1600,8 @@ async function mobileAddManual() {
 
   renderCustomerList();
   updateStats();
-  saveData(customers);
+  const saved = await saveCustomer(entry);
+  if (saved) entry._dbId = saved.id;
 }
 
 // ========== ファイル読込 ==========
@@ -1789,6 +1871,8 @@ async function plotBulk() {
         }
       }
       addMarker(c._id, coords.lat, coords.lng);
+      const dbSaved = await saveCustomer(c);
+      if (dbSaved) c._dbId = dbSaved.id;
     } else {
       c._status = 'error';
     }
@@ -1814,7 +1898,6 @@ async function plotBulk() {
     renderCustomerList();
     showToast('⏹ ジオコーディングを中止しました');
     updateStats();
-    saveData(customers);
     return;
   }
 
@@ -1823,7 +1906,6 @@ async function plotBulk() {
     map.fitBounds(okList.map(c => [c._lat, c._lng]), { padding: [40, 40] });
   }
   updateStats();
-  saveData(customers);
   showToast(`✅ ${okList.length}件を表示しました`);
 }
 
@@ -2064,7 +2146,7 @@ function openPopupEdit(id) {
   markers[id].openPopup();
 }
 
-function savePopupEdit(id) {
+async function savePopupEdit(id) {
   const c = customers.find(x => x._id === id);
   if (!c) return;
   c._name      = document.getElementById('pedit-name')?.value.trim() || c._name;
@@ -2081,7 +2163,8 @@ function savePopupEdit(id) {
   }
   renderCustomerList();
   updateStats();
-  saveData(customers);
+  const saved = await saveCustomer(c);
+  if (saved) c._dbId = saved.id;
   showToast('✅ 顧客情報を更新しました');
 }
 
@@ -2094,7 +2177,7 @@ function cancelPopupEdit(id) {
 }
 
 // ========== 営業ステータス変更 ==========
-function setSalesStatus(id, status) {
+async function setSalesStatus(id, status) {
   const c = customers.find(x => x._id === id);
   if (!c) return;
   c._salesStatus = status;
@@ -2107,7 +2190,7 @@ function setSalesStatus(id, status) {
   renderCustomerList();
   updateStats();
   updateHeatmaps();
-  saveData(customers);
+  if (c._dbId) await sb.from('customers').update({ status }).eq('id', c._dbId);
 }
 
 // ========== 顧客リスト描画 ==========
@@ -2263,18 +2346,19 @@ function focusCustomer(id) {
 }
 
 // ========== 削除 ==========
-function deleteCustomer(id) {
-  customers = customers.filter(c => c._id !== id);
+async function deleteCustomer(id) {
+  const c = customers.find(x => x._id === id);
+  customers = customers.filter(x => x._id !== id);
   if (markers[id]) { markerGroup.removeLayer(markers[id]); delete markers[id]; }
   renderCustomerList();
   updateStats();
-  saveData(customers);
+  if (c) await removeCustomer(c);
 }
 
 // ========== クリア ==========
 let lastDeletedCustomers = null;
 
-function clearAll() {
+async function clearAll() {
   if (!customers.length) return;
   lastDeletedCustomers = JSON.parse(JSON.stringify(customers));
   markerGroup.clearLayers();
@@ -2287,17 +2371,21 @@ function clearAll() {
   document.getElementById('gsUrl').value = '';
   renderCustomerList();
   updateStats();
-  saveData(customers);
+  await clearAllFromDb();
   map.setView([36.2, 138.0], 5);
   showToastWithUndo(`🗑 ${lastDeletedCustomers.length}件を削除しました`);
 }
 
-function undoClearAll() {
+async function undoClearAll() {
   if (!lastDeletedCustomers) return;
   clearInterval(toastCountdownInterval);
   clearTimeout(toastTimer);
   document.getElementById('toast').classList.remove('show');
   restoreCustomers(lastDeletedCustomers);
+  for (const c of customers) {
+    const saved = await saveCustomer(c);
+    if (saved) c._dbId = saved.id;
+  }
   lastDeletedCustomers = null;
   showToast('↩️ 元に戻しました');
 }
@@ -2465,7 +2553,7 @@ map.on('click', function(e) {
     .finally(() => clearTimeout(timer));
 });
 
-function addPinFromMap(formId, lat, lng) {
+async function addPinFromMap(formId, lat, lng) {
   const name     = document.getElementById(`${formId}-name`)?.value.trim();
   const addr     = document.getElementById(`${formId}-addr`)?.value.trim();
   const tel      = document.getElementById(`${formId}-tel`)?.value.trim();
@@ -2487,7 +2575,8 @@ function addPinFromMap(formId, lat, lng) {
   renderCustomerList();
   updateStats();
   updateHeatmaps();
-  saveData(customers);
+  const pinSaved = await saveCustomer(entry);
+  if (pinSaved) entry._dbId = pinSaved.id;
   showToast('✅ ピンを追加しました');
 }
 
@@ -2728,11 +2817,15 @@ function importData(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = ev => {
+  reader.onload = async ev => {
     try {
       const data = JSON.parse(ev.target.result);
       if (!Array.isArray(data)) throw new Error();
       restoreCustomers(data);
+      for (const c of customers) {
+        const saved = await saveCustomer(c);
+        if (saved) c._dbId = saved.id;
+      }
       showToast(`📂 ${data.length}件を読み込みました`);
     } catch {
       showToast('❌ ファイルの形式が正しくありません');
@@ -2757,23 +2850,83 @@ async function restoreCustomers(data) {
   }
   renderCustomerList();
   updateStats();
-  await saveData(customers);
+}
+
+// ========== 認証 ==========
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  if (!email || !password) {
+    errEl.textContent = 'メールアドレスとパスワードを入力してください';
+    errEl.style.display = 'block';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '⏳ ログイン中...';
+  errEl.style.display = 'none';
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    currentUser = data.user;
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('userEmail').textContent = currentUser.email;
+    const savedDays = localStorage.getItem('maintAlertDays');
+    if (savedDays) document.getElementById('maintAlertDaysInput').value = savedDays;
+    showToast('⏳ データを読み込み中...');
+    const loaded = await loadData();
+    if (loaded.length) {
+      await restoreCustomers(loaded);
+      showToast(`💾 ${loaded.length}件のデータを読み込みました`);
+      const alertItems = loaded.filter(c => { const ms = getMaintStatus(c); return ms === 'overdue' || ms === 'soon'; });
+      if (alertItems.length) setTimeout(() => showMaintAlerts(), 800);
+    } else {
+      showToast('ログインしました');
+    }
+  } catch {
+    errEl.textContent = 'メールアドレスまたはパスワードが間違っています';
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ログイン';
+  }
+}
+
+async function handleSignOut() {
+  await sb.auth.signOut();
+  location.reload();
 }
 
 (async () => {
+  // 認証チェック
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    document.getElementById('loginOverlay').style.display = 'flex';
+    return;
+  }
+  currentUser = session.user;
+  document.getElementById('userEmail').textContent = currentUser.email;
+
   // 設定の復元
   const savedDays = localStorage.getItem('maintAlertDays');
   if (savedDays) document.getElementById('maintAlertDaysInput').value = savedDays;
 
+  showToast('⏳ データを読み込み中...');
   const saved = await loadData();
   if (saved.length) {
     await restoreCustomers(saved);
     showToast(`💾 ${saved.length}件のデータを復元しました`);
-    // メンテナンスアラートチェック
     const alertItems = saved.filter(c => { const ms = getMaintStatus(c); return ms === 'overdue' || ms === 'soon'; });
     if (alertItems.length) setTimeout(() => showMaintAlerts(), 800);
+  } else {
+    showToast('データはまだありません。顧客を追加してください。');
   }
 })();
+
+// Enterキーでログイン
+document.getElementById('loginEmail')?.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+document.getElementById('loginPassword')?.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
 </script>
 
 <!-- カスタム日付ピッカー -->
