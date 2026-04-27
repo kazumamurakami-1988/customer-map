@@ -1903,7 +1903,7 @@ async function plotBulk() {
 
   const okList = customers.filter(c => c._status === 'ok');
   if (okList.length) {
-    map.fitBounds(okList.map(c => [c._lat, c._lng]), { padding: [40, 40], maxZoom: 13 });
+    map.fitBounds(okList.map(c => [c._lat, c._lng]), { padding: [40, 40], maxZoom: 8 });
   }
   updateStats();
   showToast(`✅ ${okList.length}件を表示しました`);
@@ -2846,7 +2846,7 @@ async function restoreCustomers(data) {
   const plotted = customers.filter(c => c._status === 'ok' && c._lat && c._lng);
   plotted.forEach(c => addMarker(c._id, c._lat, c._lng));
   if (plotted.length) {
-    map.fitBounds(plotted.map(c => [c._lat, c._lng]), { padding: [40, 40], maxZoom: 13 });
+    map.fitBounds(plotted.map(c => [c._lat, c._lng]), { padding: [40, 40], maxZoom: 8 });
   }
   renderCustomerList();
   updateStats();
