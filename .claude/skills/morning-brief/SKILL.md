@@ -22,9 +22,12 @@ version: "1.0.0"
 
 ### 1. 今日のカレンダー予定を取る
 
-- Google Calendar の `list_events` で、今日（JST 00:00〜23:59）の予定を全カレンダー分取得。
-- 終日予定・時間指定予定を分け、時系列に並べる。
+- まず `list_calendars` でカレンダー一覧を取り、本人の予定が入る次の2つを必ず `list_events` する（祝日カレンダーは除外）:
+  - `kazuma_murakami@empowerjp.com`（エンパワー／primary）
+  - `kazuma.murakami@michibiki.jp`（みちびき）
+- 今日（JST 00:00〜23:59）の予定を時系列に並べる。終日予定・時間指定予定を分ける。
 - 各予定: 開始〜終了時刻、タイトル、参加者（社外が居れば誰か）、Meet/Zoom リンクがあれば併記。
+- 注意: みちびきカレンダーの `accessRole` が `freeBusyReader` のときはタイトルが取れず時間帯のみになる。その場合は「（タイトル非公開）」と添え、共有権限の格上げを促す。
 
 ### 2. Gmail の「未返信」を拾う
 
